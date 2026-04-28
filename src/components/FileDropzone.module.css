@@ -1,0 +1,58 @@
+.dropzone {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  background: #f9f9f9;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.dropzone.dragOver {
+  border-color: #0066cc;
+  background: #e6f2ff;
+}
+
+.dropzone:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.content {
+  pointer-events: none;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.subtitle {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #666;
+}
+
+.button {
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  background: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background 0.2s;
+}
+
+.button:hover:not(:disabled) {
+  background: #0052a3;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -1,0 +1,139 @@
+.panel {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.header {
+  background: linear-gradient(135deg, #0066cc, #0052a3);
+  color: white;
+  padding: 24px;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.filename {
+  margin: 8px 0 0;
+  font-size: 13px;
+  opacity: 0.9;
+  word-break: break-all;
+}
+
+.content {
+  padding: 24px;
+}
+
+.dateSection {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #eee;
+}
+
+.dateLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.dateValue {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.countsSection {
+  margin-bottom: 24px;
+}
+
+.countsTitle {
+  margin: 0 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.countsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+}
+
+.count {
+  text-align: center;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 6px;
+}
+
+.countValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0066cc;
+  margin-bottom: 4px;
+}
+
+.countLabel {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.warningSection {
+  background: #fff8e6;
+  border: 1px solid #ffd666;
+  border-radius: 6px;
+  padding: 16px;
+  margin-top: 24px;
+}
+
+.warningTitle {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #d48806;
+}
+
+.warningMessage {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #8b6f00;
+  line-height: 1.5;
+}
+
+.detailsButton {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #ffd666;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.detailsButton:hover {
+  background: #ffcc4d;
+}
+
+.successSection {
+  background: #e6f4ea;
+  border: 1px solid #a6d3a8;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-top: 24px;
+  font-size: 13px;
+  color: #137333;
+  font-weight: 500;
+}
