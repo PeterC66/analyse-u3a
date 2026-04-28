@@ -35,6 +35,12 @@ The backup file contains personal data (names, addresses, phone numbers, emails)
 npm install
 ```
 
+> **Don't run `npm audit fix --force`.** It will upgrade Vite past
+> major-version compatibility with the React plugin and break the build.
+> The two reported audit warnings (`fast-csv`, `tmp`) are in dead code
+> paths inside `exceljs` that this app never exercises — they're safe
+> to ignore. See the *Dependency hygiene* section in `CLAUDE.md`.
+
 ### Running the App
 
 ```bash
