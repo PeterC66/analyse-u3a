@@ -181,6 +181,88 @@ These mirror Beacon2's conventions where applicable.
 
 ---
 
+## Architecture decisions (locked in)
+
+These decisions were made during initial scaffolding. Don't reverse them
+without explicit justification — future agents should treat this section as
+non-negotiable defaults.
+
+### Stack
+
+- **Vite + React 18 + TypeScript** as a pure client-side SPA. **No backend.**
+  ExcelJS reads the file in the browser via the File API.
+- **Zod pinned to `^3.23.8`.** Zod 4 has breaking API changes that don't fit
+  the schemas as authored — do not upgrade without rewriting the schemas.
+- **Plain CSS modules per component.** No Tailwind, no MUI, no
+  styled-components. The dependency footprint stays small and there are no
+  surprise CDN fetches.
+- **No state library.** Plain `useState` in `App.tsx` is enough for the
+  current scope. Don't reach for Redux / Zustand / etc. without need.
+
+### tsconfig
+
+- `"module": "NodeNext"` + `"moduleResolution": "NodeNext"` — required because
+  the Zod schemas use ESM imports with `.js` extensions. All app-side relative
+  imports must also use `.js` extensions.
+- `"strict": true` is on. **Do not enable `noUncheckedIndexedAccess`** —
+  `_coerce.ts` uses regex match groups that fail under it, and the schemas
+  must not be modified.
+
+### App state machine
+
+`src/App.tsx` holds a small state machine:
+
+```
+idle ──▶ loading ──▶ (date-prompt if filename doesn't match)
+                  ──▶ loaded
+                  ──▶ error
+```
+
+File specification is **browser-only**. The user picks the file via
+drag-and-drop or `<input type="file">`. We never see a path string —
+only a `File` object. Filename is the source of the date/time stamp.
+
+### Snapshot type — designed for multi-file mode
+
+`src/state/types.ts` defines `Snapshot` (a `BeaconBackup` plus its
+filename/date/time metadata). Even though we're single-file now, **never
+hard-code "the current backup" anywhere**. Anything that operates on loaded
+data should accept a `Snapshot` (or `Snapshot[]` once multi-file lands).
+Multi-file mode = historical snapshots of the *same* u3a, used for trend
+analysis across years.
+
+### Validation strategy — hybrid
+
+- **Structural failures throw.** Missing sheet, malformed xlsx, or an
+  empty required sheet (other than `Calendar`, which may legitimately be
+  empty) → bubble up to the `error` state and refuse to load.
+- **Row-level failures are collected, not thrown.** Rows that fail
+  Zod validation are skipped; valid rows load. The `ValidationDetails`
+  modal surfaces the skipped rows to the user. Analyses run on valid
+  rows only.
+
+### Filename → date contract
+
+- Pattern: `^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})_` — captures both date
+  *and* time so two backups taken on the same day are distinguishable
+  (important for multi-file mode).
+- Non-conforming filenames trigger `ManualDatePrompt`. We **never silently
+  fall back** to today's date or file mtime — the user must always be aware
+  of what date is being attributed to the snapshot.
+
+### Privacy invariants (do not violate)
+
+- **`*.xlsx` is in `.gitignore`** — Beacon backups must never be committed.
+- **Vite dev server binds to `127.0.0.1`** (see `vite.config.ts`), not
+  `0.0.0.0`. The app must not be reachable from other machines on the LAN.
+- **No external HTTP at runtime.** No analytics, no telemetry, no remote
+  LLM calls.
+- **No `localStorage` / `sessionStorage` for member data.** In-memory only
+  while the file is loaded. Only non-PII config (e.g. user's chosen
+  renewal-category list) may be persisted.
+
+---
+
 ## What's NOT in the data
 
 Things the user might ask for that are **not** in a legacy Beacon backup:

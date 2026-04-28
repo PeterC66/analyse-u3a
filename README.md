@@ -38,14 +38,20 @@ npm install
 ### Running the App
 
 ```bash
-npm start
+npm run dev
 ```
 
-This starts a Vite dev server at `http://localhost:5173`. Open it in your browser, then:
+This starts a Vite dev server bound to `127.0.0.1:5173`. Open it in your browser, then:
 
-1. Use the file picker to select your Beacon backup (`.xlsx`)
-2. Wait for validation and parsing
-3. Explore the analyses
+1. Drag your Beacon backup (`.xlsx`) onto the page, or click **"Open File..."**
+2. The app extracts the backup date/time from the filename (pattern: `YYYYMMDDHHMM_*.xlsx`).
+   If the filename doesn't match, you'll be prompted to enter the date manually.
+3. The file is validated against the schemas — structural problems halt the load;
+   individual bad rows are reported and skipped.
+4. Once loaded, you'll see a summary panel and a menu of analyses to choose from.
+
+> **Status:** ingestion + UI scaffold are working. The five analysis areas are
+> shown as "Coming Soon" placeholders and will be implemented in follow-up work.
 
 ## Data Structure
 
@@ -107,26 +113,49 @@ See `BEACON-DATA-FINANCE.md` for the full recipe.
 ### Project Structure
 
 ```
-src/
-├── components/      — React components
-├── schemas/         — Zod validation schemas
-├── utils/           — Utility functions
-└── App.tsx          — Main application
-
-schemas/
-├── json/            — JSON Schema files (Draft 2020-12)
-└── zod/             — Zod schemas and TypeScript types
+analyse-u3a/
+├── index.html               — Vite entry
+├── vite.config.ts           — bound to 127.0.0.1
+├── src/
+│   ├── main.tsx             — React entry
+│   ├── App.tsx              — top-level state machine + layout
+│   ├── ingest/
+│   │   ├── parseFilename.ts — YYYYMMDDHHMM_*.xlsx → date + time
+│   │   ├── sheetToObjects.ts— ExcelJS worksheet → array of plain objects
+│   │   └── loadBackup.ts    — orchestrator (structural + row-level validation)
+│   ├── components/
+│   │   ├── FileDropzone.*       — drag-and-drop + file picker
+│   │   ├── ManualDatePrompt.*   — fallback when filename doesn't match pattern
+│   │   ├── SummaryPanel.*       — counts + validation status
+│   │   ├── AnalysisMenu.*       — five analysis placeholders
+│   │   └── ValidationDetails.*  — modal listing skipped rows
+│   └── state/
+│       └── types.ts         — Snapshot type (designed for future multi-file mode)
+└── schemas/
+    ├── json/                — JSON Schema (Draft 2020-12), one per sheet
+    └── zod/                 — Zod schemas + TypeScript types per sheet
 ```
 
 ### Coding Conventions
 
-- ES modules (`import`/`export`)
+- ES modules (`import`/`export`) — all relative imports use `.js` extensions
+  because of `moduleResolution: NodeNext`
 - TypeScript strict mode — no `any` unless commented
 - "u3a" is always lowercase
-- Validate at the boundary (use Zod when reading files)
+- Validate at the boundary (Zod runs when the file is read; trust the parsed types
+  everywhere else)
 - Dates internally as `YYYY-MM-DD` strings
 - No `localStorage` for member data
 - No backward-compatibility shims
+
+For the full set of architectural decisions (stack, validation strategy, privacy
+invariants), see the **Architecture decisions** section of `CLAUDE.md`.
+
+### Type-checking
+
+```bash
+npm run typecheck
+```
 
 ### Building for Production
 
