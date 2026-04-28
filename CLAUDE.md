@@ -261,6 +261,21 @@ analysis across years.
   while the file is loaded. Only non-PII config (e.g. user's chosen
   renewal-category list) may be persisted.
 
+### Dependency hygiene
+
+- **Do not run `npm audit fix --force`** on this project. It will upgrade
+  Vite past major-version compatibility with `@vitejs/plugin-react` (Vite 6+
+  switched to Rolldown/oxc) and break the build with cryptic
+  `jsx Invalid key` errors at dev-server start.
+- The two `npm audit` warnings — **`fast-csv`** (CSV parser DoS) and
+  **`tmp`** (symlink temp-dir write) — are in transitive deps of `exceljs`
+  that **are not exercised** by our code:
+  - We only read `.xlsx` (never `.csv`), so `fast-csv` is dead code.
+  - We use the in-browser `ArrayBuffer` API, so `tmp` (filesystem temp
+    files) is never reached.
+- If exceljs ever ships a release that drops these deps, that's a normal
+  in-range upgrade; don't bypass version constraints.
+
 ---
 
 ## What's NOT in the data
