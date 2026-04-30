@@ -75,7 +75,8 @@
     "publish": {
       "provider": "github",
       "owner": "peterc66",
-      "repo": "analyse-u3a"
+      "repo": "analyse-u3a",
+      "releaseType": "release"
     }
   }
 }
