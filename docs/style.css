@@ -50,6 +50,24 @@ header.hero .tagline {
   font-weight: 300;
 }
 
+.release-message {
+  background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+  color: white;
+  padding: 20px 25px;
+  border-radius: 8px;
+  margin-bottom: 40px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-left: 4px solid #d35400;
+  font-size: 1.05em;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.release-message p {
+  margin: 0;
+  color: white;
+}
+
 section {
   margin-bottom: 50px;
 }
@@ -281,6 +299,11 @@ footer {
 
   header.hero .tagline {
     font-size: 1em;
+  }
+
+  .release-message {
+    font-size: 0.95em;
+    padding: 15px 20px;
   }
 
   h2 {

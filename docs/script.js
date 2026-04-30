@@ -84,5 +84,23 @@ function createReleaseCard(label, filename, downloadUrl, platform) {
   return card;
 }
 
-// Load releases when page is ready
-document.addEventListener('DOMContentLoaded', loadReleases);
+async function loadMessage() {
+  const messageText = document.getElementById('message-text');
+
+  try {
+    const response = await fetch('message.json');
+    if (!response.ok) throw new Error('Could not load message');
+
+    const data = await response.json();
+    messageText.textContent = data.message;
+  } catch (error) {
+    console.error('Error loading message:', error);
+    messageText.textContent = 'Stay tuned for updates on new releases and features.';
+  }
+}
+
+// Load message and releases when page is ready
+document.addEventListener('DOMContentLoaded', () => {
+  loadMessage();
+  loadReleases();
+});
