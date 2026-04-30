@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analyse u3a — Local Desktop Analysis Tool</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <h1>Analyse u3a</h1>
+      <p class="tagline">Local-only desktop analysis for u3a Beacon membership data</p>
+    </header>
+
+    <section class="features">
+      <h2>What you can do</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <h3>📊 Membership Patterns</h3>
+          <p>Track growth, decline, and demographics by membership class</p>
+        </div>
+        <div class="feature-card">
+          <h3>👥 Group Popularity</h3>
+          <p>See which interest groups are over/undersubscribed</p>
+        </div>
+        <div class="feature-card">
+          <h3>📅 Attendance Insights</h3>
+          <p>Infer patterns from group membership and calendar data</p>
+        </div>
+        <div class="feature-card">
+          <h3>🔄 Member Churn</h3>
+          <p>Identify joiners, leavers, and lapsed renewals</p>
+        </div>
+        <div class="feature-card">
+          <h3>💰 Renewal Payments</h3>
+          <p>Analyze income totals and trends by year and class</p>
+        </div>
+        <div class="feature-card">
+          <h3>🔒 Your Data Stays Safe</h3>
+          <p>Everything runs locally — no uploads, no cloud, no telemetry</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="privacy">
+      <h2>Privacy by Design</h2>
+      <p><strong>Your data never leaves your machine.</strong></p>
+      <ul>
+        <li>Runs locally only — no cloud uploads or telemetry</li>
+        <li>Makes no external HTTP calls with your member data</li>
+        <li>Binds to localhost only</li>
+        <li>Data stays in memory while loaded</li>
+      </ul>
+      <p class="note">The backup file contains personal data (names, addresses, phone numbers, emails) and must be protected accordingly.</p>
+    </section>
+
+    <section class="downloads">
+      <h2>Download</h2>
+      <p class="latest-version">Latest version: <span id="version">Loading...</span></p>
+      <div id="releases-container" class="releases-grid">
+        <div class="release-card">
+          <h3>⏳ Loading releases...</h3>
+          <p>Fetching from GitHub...</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="getting-started">
+      <h2>Getting Started</h2>
+      <ol>
+        <li>Download the installer for your operating system from above</li>
+        <li>Run the installer and follow the prompts</li>
+        <li>Open your Beacon backup file (`.xlsx`) with the app</li>
+        <li>The app extracts the backup date from the filename</li>
+        <li>Choose an analysis to explore your data</li>
+      </ol>
+      <p class="note">
+        <strong>Windows users:</strong> You may see a SmartScreen warning on first run.
+        Click "More info" → "Run anyway" to proceed. Future signed releases will skip this step.
+      </p>
+    </section>
+
+    <section class="more-info">
+      <h2>Learn More</h2>
+      <ul>
+        <li><a href="https://github.com/peterc66/analyse-u3a" target="_blank">View source code on GitHub</a></li>
+        <li><a href="https://github.com/peterc66/analyse-u3a/releases" target="_blank">All releases</a></li>
+        <li><a href="https://github.com/peterc66/analyse-u3a#data-privacy" target="_blank">Data privacy policy</a></li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>© u3a Analyse — Local data analysis made simple</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
