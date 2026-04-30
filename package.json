@@ -1,6 +1,6 @@
 {
   "name": "analyse-u3a",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "private": true,
   "type": "module",
   "description": "Local-only desktop analysis tool for u3a Beacon backup files",
@@ -75,7 +75,8 @@
     "publish": {
       "provider": "github",
       "owner": "peterc66",
-      "repo": "analyse-u3a"
+      "repo": "analyse-u3a",
+      "releaseType": "release"
     }
   }
 }
