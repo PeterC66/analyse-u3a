@@ -25,13 +25,30 @@ The backup file contains personal data (names, addresses, phone numbers, emails)
 
 ## Getting Started
 
-### Prerequisites
+### For End Users
+
+Download the latest installer for your operating system:
+
+- **Windows:** `Analyse-u3a-0.0.1.exe` from [Releases](https://github.com/peterc66/analyse-u3a/releases)
+- **macOS:** `Analyse-u3a-0.0.1.dmg` from [Releases](https://github.com/peterc66/analyse-u3a/releases)
+
+Run the installer and follow the prompts. The app will check for updates automatically.
+
+> **First run note:** Windows may show a "SmartScreen" warning since the app is unsigned.
+> Click "More info" → "Run anyway" to proceed. Future signed releases will skip this step.
+
+### For Developers
+
+#### Prerequisites
 
 - **Node.js** (LTS) with npm
+- **Git**
 
-### Installation
+#### Setup
 
 ```bash
+git clone https://github.com/peterc66/analyse-u3a.git
+cd analyse-u3a
 npm install
 ```
 
@@ -41,7 +58,7 @@ npm install
 > paths inside `exceljs` that this app never exercises — they're safe
 > to ignore. See the *Dependency hygiene* section in `CLAUDE.md`.
 
-### Running the App
+#### Development Server
 
 ```bash
 npm run dev
@@ -55,6 +72,18 @@ This starts a Vite dev server bound to `127.0.0.1:5173`. Open it in your browser
 3. The file is validated against the schemas — structural problems halt the load;
    individual bad rows are reported and skipped.
 4. Once loaded, you'll see a summary panel and a menu of analyses to choose from.
+
+#### Building the Desktop App (Electron)
+
+To build installers for Windows and macOS:
+
+```bash
+npm run build:electron
+```
+
+This compiles the React app, bundles it with Electron, and creates:
+- `dist/Analyse-u3a-0.0.1.exe` (Windows)
+- `dist/Analyse-u3a-0.0.1.dmg` (macOS)
 
 > **Status:** ingestion + UI scaffold are working. The five analysis areas are
 > shown as "Coming Soon" placeholders and will be implemented in follow-up work.
@@ -84,11 +113,13 @@ The Zod schemas in `schemas/zod/index.ts` are the runtime source of truth for da
 
 | Layer | Technology | Why |
 |-------|-----------|-----|
-| Runtime | Node.js (LTS) | Cross-platform, ships with npm |
+| Desktop App | Electron + electron-updater | Native Windows/macOS apps with auto-updates |
+| Runtime | Node.js (LTS) | Cross-platform, ships with Electron |
 | Language | TypeScript | Strict type safety; schemas are TS-native |
 | Excel parsing | exceljs | Battle-tested, same library as Beacon2 |
 | Validation | Zod | Schemas already authored as Zod |
-| UI | Vite + React | Fast dev loop, widely understood |
+| UI | Vite + React | Fast dev loop, locally-bundled |
+| Packaging | electron-builder | Creates .exe (Windows) and .dmg (macOS) installers |
 | Charts | recharts or chart.js | Both work locally without external resources |
 | Storage | In-memory or SQLite | SQLite optional for snapshot comparisons |
 
@@ -120,8 +151,13 @@ See `BEACON-DATA-FINANCE.md` for the full recipe.
 
 ```
 analyse-u3a/
-├── index.html               — Vite entry
-├── vite.config.ts           — bound to 127.0.0.1
+├── index.html               — Vite entry point
+├── package.json             — includes electron-builder config
+├── vite.config.ts           — dev server bound to 127.0.0.1
+├── electron/
+│   ├── main.ts              — Electron main process
+│   ├── preload.ts           — context-isolated preload script
+│   └── tsconfig.json        — TypeScript config for Electron
 ├── src/
 │   ├── main.tsx             — React entry
 │   ├── App.tsx              — top-level state machine + layout
@@ -137,6 +173,10 @@ analyse-u3a/
 │   │   └── ValidationDetails.*  — modal listing skipped rows
 │   └── state/
 │       └── types.ts         — Snapshot type (designed for future multi-file mode)
+├── .github/workflows/
+│   └── release.yml          — GitHub Actions: build & publish installers
+├── assets/
+│   └── icon.png             — application icon
 └── schemas/
     ├── json/                — JSON Schema (Draft 2020-12), one per sheet
     └── zod/                 — Zod schemas + TypeScript types per sheet
@@ -165,11 +205,34 @@ npm run typecheck
 
 ### Building for Production
 
+**Web build (development/testing only):**
+
 ```bash
 npm run build
 ```
 
-Output is in `dist/`. To package as a standalone executable (Electron or `pkg`), see the respective tool docs.
+Output is in `dist/`. This creates a static bundle but is not used in distribution.
+
+**Desktop app build (for distribution):**
+
+```bash
+npm run build:electron
+```
+
+This creates platform-specific installers:
+- `dist/Analyse-u3a-0.0.1.exe` (Windows NSIS installer)
+- `dist/Analyse-u3a-0.0.1.dmg` (macOS disk image)
+- `dist/Analyse-u3a-0.0.1.zip` (macOS portable)
+
+### Releasing to Users
+
+1. Update `package.json` version (e.g., `0.0.2`)
+2. Commit and push to `main`
+3. Create a git tag: `git tag v0.0.2 && git push origin v0.0.2`
+4. GitHub Actions automatically builds and publishes installers to [Releases](https://github.com/peterc66/analyse-u3a/releases)
+5. Users will see an update notification the next time they open the app
+
+See `RELEASES.md` for detailed release workflow.
 
 ## Contributing
 

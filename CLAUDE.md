@@ -189,8 +189,14 @@ non-negotiable defaults.
 
 ### Stack
 
-- **Vite + React 18 + TypeScript** as a pure client-side SPA. **No backend.**
-  ExcelJS reads the file in the browser via the File API.
+- **Electron + electron-updater** wraps the React app as a native desktop
+  application for Windows and macOS. **No browser-based URL bar or navigation.**
+  Users get a `.exe` (Windows) or `.dmg` (macOS) installer; the bundled Node.js
+  runs everything locally. Auto-updates are handled by `electron-updater`.
+- **Vite + React 18 + TypeScript** as the app UI layer (client-side only).
+  **No backend.** ExcelJS reads the file via the File API.
+- **electron-builder** packages Electron + React bundle into platform-specific
+  installers (NSIS for Windows, DMG for macOS).
 - **Zod pinned to `^3.23.8`.** Zod 4 has breaking API changes that don't fit
   the schemas as authored — do not upgrade without rewriting the schemas.
 - **Plain CSS modules per component.** No Tailwind, no MUI, no
@@ -198,6 +204,22 @@ non-negotiable defaults.
   surprise CDN fetches.
 - **No state library.** Plain `useState` in `App.tsx` is enough for the
   current scope. Don't reach for Redux / Zustand / etc. without need.
+
+### Electron deployment strategy
+
+- **Installers are built once per release** via GitHub Actions (`.github/workflows/release.yml`).
+  Trigger: push a git tag `v*` (e.g., `v0.0.2`); GitHub Actions automatically
+  builds `.exe` (Windows) and `.dmg` (macOS), then publishes them to GitHub Releases.
+- **Auto-updates:** End users don't need to manually re-download. The app checks
+  for new versions on startup; if found, it downloads and applies the update.
+  (Powered by `electron-updater` + GitHub Releases API.)
+- **No code signing for now** (set to free/unsigned). Windows will show a SmartScreen
+  warning on first run, but users can click through. When budget allows, obtain
+  a code-signing cert and set `certificateFile` + `certificatePassword` in
+  `package.json` → `build.win`.
+- **Development vs. production:** `npm run dev` launches Vite on `127.0.0.1:5173`
+  and can be used for quick testing. `npm run build:electron` produces the final
+  installers.
 
 ### tsconfig
 
@@ -255,8 +277,12 @@ analysis across years.
 - **`*.xlsx` is in `.gitignore`** — Beacon backups must never be committed.
 - **Vite dev server binds to `127.0.0.1`** (see `vite.config.ts`), not
   `0.0.0.0`. The app must not be reachable from other machines on the LAN.
-- **No external HTTP at runtime.** No analytics, no telemetry, no remote
-  LLM calls.
+- **Electron app is single-machine only.** The main window cannot be accessed
+  remotely and no HTTP server is exposed to the network.
+- **Auto-updates check GitHub Releases API only** — no member data is sent.
+  The update check is deterministic and can be inspected in electron logs.
+- **No external HTTP at runtime except update checks.** No analytics, no
+  telemetry, no remote LLM calls, no CDN fetches for assets.
 - **No `localStorage` / `sessionStorage` for member data.** In-memory only
   while the file is loaded. Only non-PII config (e.g. user's chosen
   renewal-category list) may be persisted.
