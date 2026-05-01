@@ -16,7 +16,8 @@ import type { ValidationError } from '../state/types.js';
  * validation errors are collected and returned.
  *
  * Some sheets — Faculties, Venues, Calendar, Group Ledgers, Ledger,
- * Detail — may legitimately have no data rows and are accepted empty.
+ * Detail, Finance Categories, u3a Officers — may legitimately have no
+ * data rows and are accepted empty.
  *
  * @param arrayBuffer - the file bytes
  * @throws if the file is corrupt or structurally invalid
@@ -61,6 +62,8 @@ export async function loadBackup(
     'Group Ledgers',
     'Ledger',
     'Detail',
+    'Finance Categories',
+    'u3a Officers',
   ]);
 
   for (const sheetName of sheets) {

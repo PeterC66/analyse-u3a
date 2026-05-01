@@ -257,9 +257,9 @@ analysis across years.
 
 - **Structural failures throw.** Missing sheet, malformed xlsx, or an
   empty required sheet (other than `Faculties`, `Venues`, `Calendar`,
-  `Group Ledgers`, `Ledger`, and `Detail`, which may legitimately be
-  empty in some u3as) → bubble up to the `error` state and refuse to
-  load.
+  `Group Ledgers`, `Ledger`, `Detail`, `Finance Categories`, and
+  `u3a Officers`, which may legitimately be empty in some u3as) →
+  bubble up to the `error` state and refuse to load.
 - **Row-level failures are collected, not thrown.** Rows that fail
   Zod validation are skipped; valid rows load. The `ValidationDetails`
   modal surfaces the skipped rows to the user. Analyses run on valid
