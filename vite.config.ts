@@ -9,6 +9,7 @@ const pkg = JSON.parse(readFileSync(path.join(__dirname, 'package.json'), 'utf-8
 
 export default defineConfig({
   plugins: [react()],
+  base: './',
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
