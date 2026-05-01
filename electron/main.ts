@@ -24,11 +24,11 @@ function createWindow() {
     icon: path.join(__dirname, '../assets/icon.png'),
   });
 
-  const startUrl = isDev
-    ? 'http://127.0.0.1:5173'
-    : `file://${path.join(__dirname, '../dist/index.html')}`;
-
-  mainWindow.loadURL(startUrl);
+  if (isDev) {
+    mainWindow.loadURL('http://127.0.0.1:5173');
+  } else {
+    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+  }
 
   if (isDev) {
     mainWindow.webContents.openDevTools();
