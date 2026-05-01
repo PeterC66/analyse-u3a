@@ -6,6 +6,7 @@ import AnalysisMenu from './components/AnalysisMenu.js';
 import { parseBackupFilename } from './ingest/parseFilename.js';
 import { loadBackup } from './ingest/loadBackup.js';
 import type { Snapshot, ValidationError } from './state/types.js';
+import releaseMessage from '../docs/message.json' with { type: 'json' };
 import styles from './App.module.css';
 
 type State = 'idle' | 'loading' | 'date-prompt' | 'loaded' | 'error';
@@ -90,6 +91,9 @@ export default function App() {
         <p className={styles.subtitle}>
           Local analysis tool for Beacon membership backups
         </p>
+        {releaseMessage.message && (
+          <p className={styles.releaseMessage}>{releaseMessage.message}</p>
+        )}
       </header>
 
       <main className={styles.main}>
@@ -136,6 +140,10 @@ export default function App() {
           </div>
         )}
       </main>
+
+      <footer className={styles.footer}>
+        <span className={styles.version}>v{__APP_VERSION__}</span>
+      </footer>
     </div>
   );
 }

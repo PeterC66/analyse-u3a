@@ -17,7 +17,7 @@
     "allowImportingTsExtensions": false,
     "useDefineForClassFields": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "schemas/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "schemas/**/*.ts", "docs/message.json"],
   "exclude": ["node_modules", "dist"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
