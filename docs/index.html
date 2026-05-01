@@ -80,8 +80,26 @@
         <li>Choose an analysis to explore your data</li>
       </ol>
       <p class="note">
-        <strong>Windows users:</strong> You may see a SmartScreen warning on first run.
-        Click "More info" → "Run anyway" to proceed. Future signed releases will skip this step.
+        <strong>Windows users:</strong> Because the installer is not yet code-signed,
+        Windows SmartScreen and third-party antivirus tools (Avast, AVG, Norton,
+        McAfee, etc.) may warn that the file is "suspicious" or block the download
+        outright. This is a generic warning given to any unsigned application — it
+        does not mean the file is unsafe.
+      </p>
+      <ul class="note">
+        <li>If your browser blocks the download, choose "Keep" / "Keep anyway".</li>
+        <li>If SmartScreen warns on first run, click "More info" → "Run anyway".</li>
+        <li>If your antivirus blocks the installer, choose "Open anyway" /
+            "Allow" — or temporarily allow the file in your AV's quarantine.</li>
+        <li>You can verify the installer by comparing its SHA-256 hash with the
+            one published on the
+            <a href="https://github.com/peterc66/analyse-u3a/releases" target="_blank">GitHub Releases</a>
+            page, and inspect the
+            <a href="https://github.com/peterc66/analyse-u3a" target="_blank">source code</a>.</li>
+      </ul>
+      <p class="note">
+        A code-signing certificate is planned for a future release, which will
+        eliminate most of these warnings.
       </p>
     </section>
 

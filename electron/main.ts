@@ -1,7 +1,9 @@
-import { app, BrowserWindow, Menu } from 'electron';
-import { autoUpdater } from 'electron-updater';
+import { app, BrowserWindow, Menu, session } from 'electron';
+import electronUpdater from 'electron-updater';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+const { autoUpdater } = electronUpdater;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isDev = !app.isPackaged;
@@ -43,6 +45,11 @@ function createWindow() {
 }
 
 app.on('ready', () => {
+  session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => {
+    callback(false);
+  });
+  session.defaultSession.setPermissionCheckHandler(() => false);
+
   createWindow();
   createMenu();
 });
