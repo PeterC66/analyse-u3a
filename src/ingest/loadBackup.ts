@@ -11,8 +11,13 @@ import type { ValidationError } from '../state/types.js';
 /**
  * Load and validate a Beacon backup file (`.xlsx`).
  *
- * Structural errors (missing sheet, wrong columns) throw immediately.
- * Row-level validation errors are collected and returned.
+ * Structural errors (missing sheet, wrong columns, empty sheet that
+ * is required to have at least one row) throw immediately. Row-level
+ * validation errors are collected and returned.
+ *
+ * Some sheets — Faculties, Venues, Calendar, Group Ledgers, Ledger,
+ * Detail, Finance Categories, u3a Officers — may legitimately have no
+ * data rows and are accepted empty.
  *
  * @param arrayBuffer - the file bytes
  * @throws if the file is corrupt or structurally invalid
@@ -47,6 +52,20 @@ export async function loadBackup(
     'u3a Officers',
   ];
 
+  // These sheets may legitimately have no data rows in some u3as
+  // (e.g. a u3a that has not yet entered any venues, scheduled any
+  // calendar events, recorded any ledger transactions, etc.).
+  const sheetsThatMayBeEmpty: ReadonlySet<SheetName> = new Set<SheetName>([
+    'Faculties',
+    'Venues',
+    'Calendar',
+    'Group Ledgers',
+    'Ledger',
+    'Detail',
+    'Finance Categories',
+    'u3a Officers',
+  ]);
+
   for (const sheetName of sheets) {
     const ws = wb.getWorksheet(sheetName);
     if (!ws) {
@@ -54,8 +73,7 @@ export async function loadBackup(
     }
 
     const rows = sheetToObjects(ws);
-    if (rows.length === 0 && sheetName !== 'Calendar') {
-      // Calendar may legitimately be empty (no events scheduled).
+    if (rows.length === 0 && !sheetsThatMayBeEmpty.has(sheetName)) {
       throw new Error(`Sheet "${sheetName}" is empty (no data rows)`);
     }
 
