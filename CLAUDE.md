@@ -211,7 +211,15 @@ non-negotiable defaults.
 
 - **Installers are built once per release** via GitHub Actions (`.github/workflows/release.yml`).
   Trigger: push a git tag `v*` (e.g., `v0.0.2`); GitHub Actions automatically
-  builds `.exe` (Windows) and `.dmg` (macOS), then publishes them to GitHub Releases.
+  builds `.exe` (Windows) and `.dmg` (macOS, both arm64 and x64), then
+  publishes them to GitHub Releases.
+- **The release job invokes `npx electron-builder --publish always`** rather
+  than the local `npm run build:electron` script. The `--publish always`
+  flag is load-bearing: without it, electron-builder builds installers on
+  the runner and exits without uploading them, so the GitHub Release ends
+  up with only the auto-generated source-code zipball/tarball. The local
+  `build:electron` script deliberately omits `--publish` so a developer
+  running it on their laptop never accidentally uploads to a release.
 - **Auto-updates:** End users don't need to manually re-download. The app checks
   for new versions on startup; if found, it downloads and applies the update.
   (Powered by `electron-updater` + GitHub Releases API.)
