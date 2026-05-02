@@ -53,13 +53,32 @@ GitHub Actions automatically builds and uploads to the GitHub Release:
 - **macOS Intel:** `Analyse-u3a-X.Y.Z.dmg` and `.zip`
 - **macOS auto-update metadata:** `latest-mac.yml`
 
-The release workflow runs `npx electron-builder --publish always` so the
-installers are uploaded to the matching `vX.Y.Z` GitHub Release as soon
-as they're built. If a release was tagged but ends up containing only
-the auto-generated source-code zipball/tarball, the most likely cause is
-that `--publish always` is missing from the workflow — electron-builder
-will quietly produce installers locally on the runner and then exit
-without uploading.
+### How the workflow uploads them
+
+The release workflow has two stages:
+
+1. **Build matrix (windows-latest, macos-latest).** Each job runs
+   `npm run build` then `npx electron-builder --publish never` and uploads
+   the resulting installers + auto-update metadata as
+   `actions/upload-artifact@v4` workflow artifacts. The
+   `if-no-files-found: error` setting fails the job loudly if a build
+   silently produced no installers.
+2. **Publish job.** Downloads every artifact from the build matrix and
+   attaches them to the `vX.Y.Z` GitHub Release using
+   `softprops/action-gh-release@v2`, which works whether the release
+   already exists (draft or published) or needs to be created. The
+   `fail_on_unmatched_files: true` setting fails the workflow if no
+   files matched.
+
+We deliberately do **not** use electron-builder's built-in
+`--publish always`. In testing (v0.1.1, v0.1.2), electron-builder's
+GitHub publisher exited 0 without uploading whenever a release for the
+tag already existed at upload time — the typical case here, since the
+release is created from the GitHub UI / auto-generated notes before the
+workflow finishes. If you ever see a release at a `v*` tag with only
+the auto-generated source-code zipball/tarball, check the workflow run:
+either a build job failed (look for "no files found" errors) or the
+publish job failed to authenticate / attach.
 
 ## Sharing with Users
 
