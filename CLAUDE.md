@@ -213,13 +213,21 @@ non-negotiable defaults.
   Trigger: push a git tag `v*` (e.g., `v0.0.2`); GitHub Actions automatically
   builds `.exe` (Windows) and `.dmg` (macOS, both arm64 and x64), then
   publishes them to GitHub Releases.
-- **The release job invokes `npx electron-builder --publish always`** rather
-  than the local `npm run build:electron` script. The `--publish always`
-  flag is load-bearing: without it, electron-builder builds installers on
-  the runner and exits without uploading them, so the GitHub Release ends
-  up with only the auto-generated source-code zipball/tarball. The local
-  `build:electron` script deliberately omits `--publish` so a developer
-  running it on their laptop never accidentally uploads to a release.
+- **Build and publish are deliberately decoupled.** Each matrix OS job
+  runs `npx electron-builder --publish never` and uploads the installers
+  via `actions/upload-artifact@v4` with `if-no-files-found: error`. A
+  separate `publish` job depends on the build matrix, downloads every
+  artifact, and attaches them to the GitHub Release with
+  `softprops/action-gh-release@v2` (`fail_on_unmatched_files: true`).
+  Don't reintroduce electron-builder's own `--publish always`: in v0.1.1
+  / v0.1.2 it exited 0 without uploading whenever a release for the tag
+  already existed (the normal case here, since the release is typically
+  created by GitHub's auto-generated-notes flow before the workflow
+  finishes). The current decoupled flow is robust against that and
+  surfaces silent build failures explicitly.
+- The local `build:electron` script (`npm run build && electron-builder`)
+  deliberately omits `--publish` so a developer running it on their
+  laptop never accidentally uploads to a release.
 - **Auto-updates:** End users don't need to manually re-download. The app checks
   for new versions on startup; if found, it downloads and applies the update.
   (Powered by `electron-updater` + GitHub Releases API.)

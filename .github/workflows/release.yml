@@ -8,10 +8,17 @@ on:
 permissions:
   contents: write
 
+# Two simultaneous tag pushes shouldn't race to write the same release.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
+    name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, macos-latest]
 
@@ -31,8 +38,61 @@ jobs:
       - name: Build web bundle and electron main
         run: npm run build
 
-      - name: Package and publish installers
-        run: npx electron-builder --publish always
+      # --publish never: produce installers locally only. The dedicated
+      # 'publish' job below uploads them to the GitHub Release. Don't ask
+      # electron-builder to publish — its detection of "already-published
+      # release for this tag" is unreliable across versions and was the
+      # reason v0.1.1 / v0.1.2 ended up with no installer assets.
+      - name: Package installers
+        run: npx electron-builder --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: List built artifacts (debug)
+        shell: bash
+        run: |
+          echo "Contents of dist/ on ${{ matrix.os }}:"
+          ls -la dist || true
+
+      - name: Upload installers as workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.os }}
+          # Capture installers AND the auto-update metadata files
+          # (latest*.yml, *.blockmap) — without those, electron-updater
+          # on installed apps can't see the new release.
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
+            dist/*.blockmap
+            dist/latest*.yml
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Attach installers to GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: List downloaded artifacts (debug)
+        run: |
+          echo "Files to attach to release ${GITHUB_REF_NAME}:"
+          ls -la artifacts
+
+      - name: Attach installers to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          # softprops/action-gh-release attaches to an existing release at
+          # the matching tag (draft or published) or creates one if absent,
+          # without overwriting body / draft / prerelease state.
+          files: artifacts/*
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
