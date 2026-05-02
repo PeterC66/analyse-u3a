@@ -82,7 +82,7 @@ Suggested baseline:
 | xlsx parsing | `exceljs` | Same library Beacon2 uses; battle-tested |
 | Validation | `zod` | Schemas already authored as Zod |
 | UI | Vite + React | Fast dev loop; widely understood by AI agents |
-| Charts | `recharts` or `chart.js` | Both work locally without external resources |
+| Charts | `recharts` (chosen) | React-idiomatic JSX charts, locally bundled |
 | Storage | In-memory (Map / arrays) **or** SQLite via `better-sqlite3` | SQLite if user wants to compare snapshots over time |
 | Packaging (optional) | Electron, or just `npm start` opening `localhost:5173` | Keep it simple; Electron only if a "real exe" is needed |
 
@@ -178,6 +178,8 @@ These mirror Beacon2's conventions where applicable.
 - **Don't add backwards-compat shims.** This is a fresh app.
 - **Don't write comments that explain the WHAT.** Only comment WHY when
   non-obvious.
+- **Update docs alongside significant changes.** See *Documentation
+  discipline* below for what counts and which files to touch.
 
 ---
 
@@ -244,6 +246,47 @@ File specification is **browser-only**. The user picks the file via
 drag-and-drop or `<input type="file">`. We never see a path string —
 only a `File` object. Filename is the source of the date/time stamp.
 
+Inside `loaded`, a separate `view` discriminated union drives in-app
+navigation between the analysis screens:
+
+```
+view = { kind: 'menu' }
+     | { kind: 'category', categoryId }
+     | { kind: 'analysis', analysisId }
+```
+
+There is no router — back navigation is breadcrumb buttons in the UI, not
+the OS/browser back button. Keep it that way unless real URLs become a
+requirement. Re-loading a backup resets `view` to `{ kind: 'menu' }`.
+
+### Analysis registry — how to add an analysis
+
+All analyses live in `src/analyses/`:
+
+- **`types.ts`** — `AnalysisDefinition`, `AnalysisCategory`, `Column`,
+  `ChartConfig`. The contract every analysis implements.
+- **`registry.ts`** — `CATEGORIES` (the five front-page cards) and
+  `ANALYSES` (every concrete analysis). `AnalysisMenu` reads `CATEGORIES`,
+  `CategoryPage` filters `ANALYSES` by `categoryId`.
+- **`<category>/<id>.ts`** — one file per analysis exporting an
+  `AnalysisDefinition`.
+
+The shape is deliberately a **plain-object registry**, not a per-analysis
+React component. The detail page (`AnalysisPage`) is generic — given an
+`AnalysisDefinition.run(snapshots)` result it renders the chart
+(`AnalysisChart`), table (`DataTable`), and download buttons (`DownloadBar`)
+uniformly. Adding an analysis is therefore: one new file + one entry in the
+registry. No UI changes.
+
+`run` takes `Snapshot[]` (not a single `Snapshot`) so multi-file mode drops
+in without changing analysis signatures. For now exactly one snapshot is
+passed.
+
+The five categories in `CATEGORIES` are fixed UI cards. Don't add a sixth
+category lightly — front-page card real estate is the user's primary
+mental model. New work should usually mean a new analysis under an
+existing category, not a new category.
+
 ### Snapshot type — designed for multi-file mode
 
 `src/state/types.ts` defines `Snapshot` (a `BeaconBackup` plus its
@@ -303,6 +346,41 @@ analysis across years.
     files) is never reached.
 - If exceljs ever ships a release that drops these deps, that's a normal
   in-range upgrade; don't bypass version constraints.
+
+---
+
+## Documentation discipline (always)
+
+**Whenever you make a significant change, update all relevant documentation
+in the same commit.** "Significant" means any of:
+
+- A user-visible feature is added, removed, or reshaped.
+- The architecture, navigation, or state model changes.
+- A dependency is added, removed, or pinned.
+- The setup, dev, build, release, or installation steps change.
+- The folder/file structure described in `README.md` changes.
+- An architectural decision in this file (`CLAUDE.md`) is made or revised.
+
+For each significant change, walk through the docs and update what's now
+stale:
+
+- **`README.md`** — project structure, tech stack table, navigation flow
+  description, "Adding a new analysis" / similar how-tos, status notes.
+- **`CLAUDE.md`** — Architecture decisions, conventions, the relevant
+  invariants. Lock in new decisions here so future agents inherit them.
+- **`INSTALLATION.md`** — only if installation, system requirements, or the
+  end-user launch experience changes.
+- **`RELEASES.md`** — only if the release / packaging / auto-update flow
+  changes.
+- **`BEACON-DATA-*.md`** — only if the Beacon data structure changes (very
+  rare; this is a snapshot of an upstream format).
+
+Bug fixes, internal refactors, dependency-version bumps within range, and
+trivial UI tweaks do **not** require doc updates. When in doubt, ask: "if a
+new contributor read these docs cold tomorrow, would they be misled by what
+I just changed?" If yes, update the docs.
+
+Doc updates belong in the same commit as the code change, not a follow-up.
 
 ---
 
