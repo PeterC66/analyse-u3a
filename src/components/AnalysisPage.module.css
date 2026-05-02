@@ -1,0 +1,48 @@
+.page {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+}
+
+.backButton {
+  background: transparent;
+  border: none;
+  color: #0066cc;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-bottom: 16px;
+}
+
+.backButton:hover {
+  text-decoration: underline;
+}
+
+.header {
+  margin-bottom: 16px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 16px;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #333;
+}
+
+.description {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.chartSection {
+  margin-bottom: 8px;
+}
+
+.tableSection {
+  margin-top: 8px;
+}
