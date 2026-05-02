@@ -32,6 +32,18 @@ This guide explains how to create releases and distribute them to users.
 
 5. **Download and test the installers locally** before sharing with users
 
+## Pre-release tags
+
+Tags whose version contains a SemVer pre-release suffix (e.g. `v0.1.1-alpha`,
+`v0.2.0-beta.1`, `v1.0.0-rc.1`) are automatically published as GitHub
+**pre-releases** and **will not be delivered to existing users** by
+auto-update. electron-builder writes them to a separate channel
+(`alpha.yml` / `beta.yml`) rather than `latest.yml`, so installations on the
+stable channel keep ignoring them until a stable `vX.Y.Z` tag is pushed.
+
+Use this when you want to share a build with a small group of testers via
+a direct download link from the GitHub release page.
+
 ## What Gets Built
 
 GitHub Actions automatically builds:
