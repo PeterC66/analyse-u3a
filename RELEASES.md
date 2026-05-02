@@ -46,9 +46,20 @@ a direct download link from the GitHub release page.
 
 ## What Gets Built
 
-GitHub Actions automatically builds:
-- **Windows:** `Analyse-u3a-0.0.X.exe` (signed with self-signed cert, Windows may warn)
-- **macOS:** `Analyse-u3a-0.0.X.dmg` (disk image installer)
+GitHub Actions automatically builds and uploads to the GitHub Release:
+- **Windows:** `Analyse-u3a-Setup-X.Y.Z.exe` (NSIS installer, x64) plus
+  `latest.yml` for auto-update
+- **macOS Apple Silicon:** `Analyse-u3a-X.Y.Z-arm64.dmg` and `.zip`
+- **macOS Intel:** `Analyse-u3a-X.Y.Z.dmg` and `.zip`
+- **macOS auto-update metadata:** `latest-mac.yml`
+
+The release workflow runs `npx electron-builder --publish always` so the
+installers are uploaded to the matching `vX.Y.Z` GitHub Release as soon
+as they're built. If a release was tagged but ends up containing only
+the auto-generated source-code zipball/tarball, the most likely cause is
+that `--publish always` is missing from the workflow — electron-builder
+will quietly produce installers locally on the runner and then exit
+without uploading.
 
 ## Sharing with Users
 

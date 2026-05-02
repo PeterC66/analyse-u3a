@@ -186,7 +186,8 @@ analyse-u3a/
 │   └── state/
 │       └── types.ts         — Snapshot type (designed for future multi-file mode)
 ├── .github/workflows/
-│   └── release.yml          — GitHub Actions: build & publish installers
+│   ├── ci.yml               — GitHub Actions: typecheck + tests + cross-OS build on PRs
+│   └── release.yml          — GitHub Actions: build & publish installers (tag push)
 ├── assets/
 │   └── icon.png             — application icon
 └── schemas/
@@ -263,6 +264,37 @@ exactly one snapshot is passed.
 ```bash
 npm run typecheck
 ```
+
+### Tests
+
+```bash
+npm test          # run the suite once (also what CI runs)
+npm run test:watch  # re-run on file changes during development
+```
+
+The suite is intentionally small and focused on the load-time guarantees
+that, if broken, would silently corrupt every analysis: Zod row coercion
+(`schemas/zod/_coerce.test.ts`), every sheet schema accepting a known-good
+fixture row (`schemas/zod/parseSheet.test.ts`), the renewal-category
+heuristic and ledger sign rule, and the filename → date/time regex
+(`src/ingest/parseFilename.test.ts`).
+
+When you add a new sheet, schema, or load-time invariant, add a test
+alongside it. UI components are not unit-tested — exercise them through
+`npm run dev` instead.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs on every PR and on pushes to `main`:
+
+- **Linux job (gating):** `npm ci` → `npm run typecheck` → `npm test` → `npm run build`.
+- **macOS + Windows matrix:** `npm ci` → `npm run build`. Catches
+  packaging-relevant regressions before a release tag is cut, without
+  invoking the heavier `electron-builder` step (that still runs only from
+  `release.yml` on tag push).
+
+A failing CI job blocks the PR. The release workflow (tag-triggered)
+remains separate and only runs on `v*` tags.
 
 ### Building for Production
 

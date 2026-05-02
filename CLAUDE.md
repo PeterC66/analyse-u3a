@@ -211,7 +211,15 @@ non-negotiable defaults.
 
 - **Installers are built once per release** via GitHub Actions (`.github/workflows/release.yml`).
   Trigger: push a git tag `v*` (e.g., `v0.0.2`); GitHub Actions automatically
-  builds `.exe` (Windows) and `.dmg` (macOS), then publishes them to GitHub Releases.
+  builds `.exe` (Windows) and `.dmg` (macOS, both arm64 and x64), then
+  publishes them to GitHub Releases.
+- **The release job invokes `npx electron-builder --publish always`** rather
+  than the local `npm run build:electron` script. The `--publish always`
+  flag is load-bearing: without it, electron-builder builds installers on
+  the runner and exits without uploading them, so the GitHub Release ends
+  up with only the auto-generated source-code zipball/tarball. The local
+  `build:electron` script deliberately omits `--publish` so a developer
+  running it on their laptop never accidentally uploads to a release.
 - **Auto-updates:** End users don't need to manually re-download. The app checks
   for new versions on startup; if found, it downloads and applies the update.
   (Powered by `electron-updater` + GitHub Releases API.)
@@ -331,6 +339,32 @@ analysis across years.
 - **No `localStorage` / `sessionStorage` for member data.** In-memory only
   while the file is loaded. Only non-PII config (e.g. user's chosen
   renewal-category list) may be persisted.
+
+### Tests and CI
+
+- **Vitest** is the test runner. Run `npm test` (one-shot, what CI runs) or
+  `npm run test:watch` (file-watch). No additional config — Vitest picks up
+  `*.test.ts` files under `src/` and `schemas/`.
+- **What is tested.** Only the load-time invariants whose failure would
+  silently corrupt every downstream analysis: Zod coercion primitives
+  (`schemas/zod/_coerce.test.ts`), every sheet schema accepting a
+  known-good fixture row (`schemas/zod/parseSheet.test.ts`), the
+  renewal-category regex and ledger sign rule, and the filename →
+  date/time parser. The fixture map in `parseSheet.test.ts` is keyed by
+  `SheetName` so the type checker forces a fixture for any newly added
+  sheet.
+- **What is not tested.** UI components are exercised through `npm run
+  dev`, not unit tests — Recharts + JSDOM + CSS modules is high
+  maintenance for little safety gain. Keep it that way unless a specific
+  UI bug warrants a targeted regression test.
+- **CI workflow** is `.github/workflows/ci.yml`. Two jobs: a Linux
+  "verify" job (typecheck + test + build, gating) and a macOS/Windows
+  build matrix that runs `npm run build` only — enough to catch
+  packaging regressions without invoking `electron-builder`. The full
+  installer build remains in `release.yml`, fired only on `v*` tag push,
+  so we don't burn signing / release minutes on every PR.
+- **Adding new tests:** put them next to the code they cover (`foo.ts` →
+  `foo.test.ts`). Don't introduce a separate `tests/` tree.
 
 ### Dependency hygiene
 
