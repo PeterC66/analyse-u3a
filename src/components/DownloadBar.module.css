@@ -1,0 +1,30 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  margin-right: 4px;
+}
+
+.button {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  background: white;
+  color: #0066cc;
+  border: 1px solid #0066cc;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.button:hover {
+  background: #0066cc;
+  color: white;
+}

@@ -71,7 +71,9 @@ This starts a Vite dev server bound to `127.0.0.1:5173`. Open it in your browser
    If the filename doesn't match, you'll be prompted to enter the date manually.
 3. The file is validated against the schemas — structural problems halt the load;
    individual bad rows are reported and skipped.
-4. Once loaded, you'll see a summary panel and a menu of analyses to choose from.
+4. Once loaded, you'll see a summary panel and a grid of analysis cards. Click
+   a card to open its list of analyses, then click an analysis to see its chart
+   and table, with download buttons for CSV, XLSX, and SVG (chart).
 
 #### Building the Desktop App (Electron)
 
@@ -85,8 +87,9 @@ This compiles the React app, bundles it with Electron, and creates:
 - `dist/Analyse-u3a-0.0.1.exe` (Windows)
 - `dist/Analyse-u3a-0.0.1.dmg` (macOS)
 
-> **Status:** ingestion + UI scaffold are working. The five analysis areas are
-> shown as "Coming Soon" placeholders and will be implemented in follow-up work.
+> **Status:** ingestion, UI scaffold, and the analysis page framework are
+> working. The five analysis categories are seeded gradually — see *Adding a
+> new analysis* below for the registry pattern.
 
 ## Data Structure
 
@@ -120,7 +123,7 @@ The Zod schemas in `schemas/zod/index.ts` are the runtime source of truth for da
 | Validation | Zod | Schemas already authored as Zod |
 | UI | Vite + React | Fast dev loop, locally-bundled |
 | Packaging | electron-builder | Creates .exe (Windows) and .dmg (macOS) installers |
-| Charts | recharts or chart.js | Both work locally without external resources |
+| Charts | recharts | Locally bundled, React-idiomatic; pinned in `package.json` |
 | Storage | In-memory or SQLite | SQLite optional for snapshot comparisons |
 
 ## Important Limitations
@@ -169,8 +172,17 @@ analyse-u3a/
 │   │   ├── FileDropzone.*       — drag-and-drop + file picker
 │   │   ├── ManualDatePrompt.*   — fallback when filename doesn't match pattern
 │   │   ├── SummaryPanel.*       — counts + validation status
-│   │   ├── AnalysisMenu.*       — five analysis placeholders
+│   │   ├── AnalysisMenu.*       — front-page grid of analysis category cards
+│   │   ├── CategoryPage.*       — per-category list of available analyses
+│   │   ├── AnalysisPage.*       — chart + table + downloads for one analysis
+│   │   ├── DataTable.*          — sortable table (shared)
+│   │   ├── AnalysisChart.*      — Recharts wrapper driven by ChartConfig
+│   │   ├── DownloadBar.*        — CSV / XLSX / SVG download buttons
 │   │   └── ValidationDetails.*  — modal listing skipped rows
+│   ├── analyses/
+│   │   ├── types.ts             — AnalysisDefinition, ChartConfig, Column
+│   │   ├── registry.ts          — CATEGORIES + ANALYSES arrays + lookup helpers
+│   │   └── <category>/<id>.ts   — one file per analysis (e.g. membership/countByClass.ts)
 │   └── state/
 │       └── types.ts         — Snapshot type (designed for future multi-file mode)
 ├── .github/workflows/
@@ -196,6 +208,55 @@ analyse-u3a/
 
 For the full set of architectural decisions (stack, validation strategy, privacy
 invariants), see the **Architecture decisions** section of `CLAUDE.md`.
+
+### Adding a new analysis
+
+The five front-page cards are **categories**. Each category opens to a list
+of **analyses**, and each analysis renders as a chart + sortable table with
+CSV / XLSX / SVG download buttons. Adding a new analysis is two small steps:
+
+1. Create `src/analyses/<category>/<id>.ts` exporting an `AnalysisDefinition`:
+
+   ```ts
+   import type { AnalysisDefinition } from '../types.js';
+
+   export const myAnalysis: AnalysisDefinition = {
+     id: 'membership-joiners-by-year',
+     categoryId: 'membership-patterns',
+     title: 'Joiners by Year',
+     description: 'New member joins per calendar year.',
+     run: (snapshots) => {
+       const snap = snapshots[0];
+       // ...derive { columns, rows } from snap.backup
+       return {
+         columns: [
+           { key: 'year',  label: 'Year' },
+           { key: 'count', label: 'New Members', align: 'right' },
+         ],
+         rows: [/* ... */],
+         chart: { type: 'line', xKey: 'year', yKey: 'count' },
+       };
+     },
+   };
+   ```
+
+2. Add one line to `src/analyses/registry.ts`:
+
+   ```ts
+   import { myAnalysis } from './membership/joinersByYear.js';
+   export const ANALYSES: AnalysisDefinition[] = [
+     countByClass,
+     myAnalysis,
+   ];
+   ```
+
+That's it. The category page picks it up via `categoryId`; the analysis page
+renders it via the shared `DataTable` / `AnalysisChart` / `DownloadBar`. No
+UI changes needed.
+
+`run` receives `Snapshot[]` rather than a single `Snapshot` so analyses can
+keep working unchanged when multi-file (trend-over-time) mode lands. For now
+exactly one snapshot is passed.
 
 ### Type-checking
 

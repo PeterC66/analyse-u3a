@@ -3,19 +3,27 @@ import FileDropzone from './components/FileDropzone.js';
 import ManualDatePrompt from './components/ManualDatePrompt.js';
 import SummaryPanel from './components/SummaryPanel.js';
 import AnalysisMenu from './components/AnalysisMenu.js';
+import CategoryPage from './components/CategoryPage.js';
+import AnalysisPage from './components/AnalysisPage.js';
 import { parseBackupFilename } from './ingest/parseFilename.js';
 import { loadBackup } from './ingest/loadBackup.js';
+import { getAnalysis } from './analyses/registry.js';
 import type { Snapshot, ValidationError } from './state/types.js';
 import releaseMessage from '../docs/message.json' with { type: 'json' };
 import styles from './App.module.css';
 
 type State = 'idle' | 'loading' | 'date-prompt' | 'loaded' | 'error';
+type View =
+  | { kind: 'menu' }
+  | { kind: 'category'; categoryId: string }
+  | { kind: 'analysis'; analysisId: string };
 
 export default function App() {
   const [state, setState] = useState<State>('idle');
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [view, setView] = useState<View>({ kind: 'menu' });
 
   // Temp state for non-conforming filenames
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -81,6 +89,7 @@ export default function App() {
     setSnapshot(snap);
     setValidationErrors(errors);
     setPendingFile(null);
+    setView({ kind: 'menu' });
     setState('loaded');
   };
 
@@ -118,8 +127,33 @@ export default function App() {
 
         {state === 'loaded' && snapshot && (
           <div className={styles.loadedContent}>
-            <SummaryPanel snapshot={snapshot} validationErrors={validationErrors} />
-            <AnalysisMenu />
+            {view.kind === 'menu' && (
+              <>
+                <SummaryPanel snapshot={snapshot} validationErrors={validationErrors} />
+                <AnalysisMenu
+                  onSelectCategory={(categoryId) => setView({ kind: 'category', categoryId })}
+                />
+              </>
+            )}
+
+            {view.kind === 'category' && (
+              <CategoryPage
+                categoryId={view.categoryId}
+                onBack={() => setView({ kind: 'menu' })}
+                onSelectAnalysis={(analysisId) => setView({ kind: 'analysis', analysisId })}
+              />
+            )}
+
+            {view.kind === 'analysis' && (
+              <AnalysisPage
+                analysisId={view.analysisId}
+                snapshot={snapshot}
+                onBack={() => {
+                  const parent = getAnalysis(view.analysisId)?.categoryId;
+                  setView(parent ? { kind: 'category', categoryId: parent } : { kind: 'menu' });
+                }}
+              />
+            )}
           </div>
         )}
 
