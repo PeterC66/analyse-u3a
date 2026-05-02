@@ -332,6 +332,32 @@ analysis across years.
   while the file is loaded. Only non-PII config (e.g. user's chosen
   renewal-category list) may be persisted.
 
+### Tests and CI
+
+- **Vitest** is the test runner. Run `npm test` (one-shot, what CI runs) or
+  `npm run test:watch` (file-watch). No additional config — Vitest picks up
+  `*.test.ts` files under `src/` and `schemas/`.
+- **What is tested.** Only the load-time invariants whose failure would
+  silently corrupt every downstream analysis: Zod coercion primitives
+  (`schemas/zod/_coerce.test.ts`), every sheet schema accepting a
+  known-good fixture row (`schemas/zod/parseSheet.test.ts`), the
+  renewal-category regex and ledger sign rule, and the filename →
+  date/time parser. The fixture map in `parseSheet.test.ts` is keyed by
+  `SheetName` so the type checker forces a fixture for any newly added
+  sheet.
+- **What is not tested.** UI components are exercised through `npm run
+  dev`, not unit tests — Recharts + JSDOM + CSS modules is high
+  maintenance for little safety gain. Keep it that way unless a specific
+  UI bug warrants a targeted regression test.
+- **CI workflow** is `.github/workflows/ci.yml`. Two jobs: a Linux
+  "verify" job (typecheck + test + build, gating) and a macOS/Windows
+  build matrix that runs `npm run build` only — enough to catch
+  packaging regressions without invoking `electron-builder`. The full
+  installer build remains in `release.yml`, fired only on `v*` tag push,
+  so we don't burn signing / release minutes on every PR.
+- **Adding new tests:** put them next to the code they cover (`foo.ts` →
+  `foo.test.ts`). Don't introduce a separate `tests/` tree.
+
 ### Dependency hygiene
 
 - **Do not run `npm audit fix --force`** on this project. It will upgrade
