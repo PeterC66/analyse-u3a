@@ -26,12 +26,18 @@ This guide is for non-technical users installing Analyse u3a on Windows or Mac.
 ### macOS
 
 1. Go to [https://github.com/peterc66/analyse-u3a/releases](https://github.com/peterc66/analyse-u3a/releases)
-2. Find the latest release and download `Analyse-u3a-X.X.X.dmg`
+2. Find the latest release and download the `.dmg` that matches your Mac:
+   - Apple Silicon (M1/M2/M3/M4): `Analyse-u3a-X.X.X-arm64.dmg`
+   - Intel: `Analyse-u3a-X.X.X.dmg` (no `-arm64` suffix)
 3. Double-click the `.dmg` file to mount it
 4. Drag "Analyse u3a" to the Applications folder
 5. Wait for the copy to complete
 6. Open **Applications** folder
-7. Double-click "Analyse u3a" to launch
+7. **Right-click** "Analyse u3a" and choose **Open** (do **not** double-click the first time)
+8. In the dialog that appears, click **Open** again to confirm
+
+The right-click step is only required the first time you launch the app.
+After that, double-click works as normal.
 
 ## Running the App
 
@@ -60,6 +66,16 @@ The app checks for updates automatically. If an update is available:
 - This is normal for unsigned apps
 - Click "More info" → "Run anyway"
 - The app is safe — it's just not from a paid certificate authority
+
+**macOS says "Analyse u3a is damaged and can't be opened" or "cannot be opened because the developer cannot be verified"?**
+- This is normal for unsigned apps downloaded from the internet — the file is **not** actually corrupted. macOS adds a "quarantine" flag to anything downloaded by Safari/Chrome and refuses to run unsigned apps until you tell it to trust this one.
+- **First, try this:** open the **Applications** folder, **right-click** (or Control-click) "Analyse u3a", choose **Open**, and then click **Open** in the dialog. After that, double-clicking will work normally.
+- **If you still see "damaged"**, open the **Terminal** app (Applications → Utilities → Terminal) and paste this single line, then press Return:
+  ```
+  xattr -cr "/Applications/Analyse u3a.app"
+  ```
+  This removes the quarantine flag. You can then launch the app normally.
+- If you downloaded the wrong architecture (e.g. the Intel `.dmg` on an Apple Silicon Mac), uninstall and download the correct one — see step 2 of the macOS install steps above.
 
 **Can't find the app after installing?**
 - **Windows:** Search for "Analyse u3a" in the Start menu
