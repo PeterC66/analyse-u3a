@@ -1,54 +1,11 @@
-import { useState } from 'react';
+import { CATEGORIES } from '../analyses/registry.js';
 import styles from './AnalysisMenu.module.css';
 
-interface Analysis {
-  id: string;
-  title: string;
-  description: string;
-  notes?: string;
-}
-
-const ANALYSES: Analysis[] = [
-  {
-    id: 'membership-patterns',
-    title: 'Membership Patterns',
-    description: 'Member growth, decline, and demographics by class',
-  },
-  {
-    id: 'group-popularity',
-    title: 'Group Popularity',
-    description: 'Group subscription levels, trends, and waitlists',
-  },
-  {
-    id: 'attendance-patterns',
-    title: 'Attendance Patterns',
-    description: 'Inferred from group membership and calendar',
-    notes: 'Note: Beacon does not record per-event attendance.',
-  },
-  {
-    id: 'member-churn',
-    title: 'Member Churn',
-    description: 'Joiners, leavers, and lapsed renewals',
-  },
-  {
-    id: 'renewal-payments',
-    title: 'Renewal Payments',
-    description: 'Income trends by year, class, and payment method',
-  },
-];
-
 interface Props {
-  onSelectAnalysis?: (analysisId: string) => void;
+  onSelectCategory: (categoryId: string) => void;
 }
 
-export default function AnalysisMenu({ onSelectAnalysis }: Props) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  const handleClick = (id: string) => {
-    setSelectedId(id);
-    onSelectAnalysis?.(id);
-  };
-
+export default function AnalysisMenu({ onSelectCategory }: Props) {
   return (
     <div className={styles.menu}>
       <div className={styles.header}>
@@ -57,16 +14,15 @@ export default function AnalysisMenu({ onSelectAnalysis }: Props) {
       </div>
 
       <div className={styles.grid}>
-        {ANALYSES.map((analysis) => (
+        {CATEGORIES.map((category) => (
           <button
-            key={analysis.id}
-            className={`${styles.card} ${selectedId === analysis.id ? styles.selected : ''}`}
-            onClick={() => handleClick(analysis.id)}
+            key={category.id}
+            className={styles.card}
+            onClick={() => onSelectCategory(category.id)}
           >
-            <h3 className={styles.cardTitle}>{analysis.title}</h3>
-            <p className={styles.cardDescription}>{analysis.description}</p>
-            {analysis.notes && <p className={styles.cardNotes}>{analysis.notes}</p>}
-            <div className={styles.placeholder}>Coming Soon</div>
+            <h3 className={styles.cardTitle}>{category.title}</h3>
+            <p className={styles.cardDescription}>{category.description}</p>
+            {category.notes && <p className={styles.cardNotes}>{category.notes}</p>}
           </button>
         ))}
       </div>
