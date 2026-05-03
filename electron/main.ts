@@ -1,5 +1,6 @@
-import { app, BrowserWindow, Menu, session } from 'electron';
-import electronUpdater from 'electron-updater';
+import { app, BrowserWindow, Menu, dialog, session, shell } from 'electron';
+import electronUpdater, { type UpdateInfo, type ProgressInfo } from 'electron-updater';
+import log from 'electron-log/main.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -8,7 +9,14 @@ const { autoUpdater } = electronUpdater;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isDev = !app.isPackaged;
 
+log.initialize();
+log.transports.file.level = 'info';
+autoUpdater.logger = log;
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
+
 let mainWindow: BrowserWindow | null = null;
+let manualUpdateCheck = false;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -38,10 +46,95 @@ function createWindow() {
     mainWindow = null;
   });
 
-  // Check for updates
   if (!isDev) {
-    autoUpdater.checkForUpdatesAndNotify();
+    autoUpdater.checkForUpdates().catch((err) => {
+      log.error('Initial update check failed:', err);
+    });
   }
+}
+
+function registerAutoUpdaterEvents() {
+  autoUpdater.on('checking-for-update', () => {
+    log.info('Checking for update…');
+  });
+
+  autoUpdater.on('update-available', (info: UpdateInfo) => {
+    log.info(`Update available: ${info.version}`);
+    if (manualUpdateCheck) {
+      dialog.showMessageBox({
+        type: 'info',
+        title: 'Update available',
+        message: `A new version (${info.version}) is being downloaded. You'll be notified when it's ready to install.`,
+        buttons: ['OK'],
+      });
+    }
+  });
+
+  autoUpdater.on('update-not-available', (info: UpdateInfo) => {
+    log.info(`No update available. Current: ${app.getVersion()}, latest: ${info.version}`);
+    if (manualUpdateCheck) {
+      dialog.showMessageBox({
+        type: 'info',
+        title: 'No update available',
+        message: `You're already on the latest version (${app.getVersion()}).`,
+        buttons: ['OK'],
+      });
+      manualUpdateCheck = false;
+    }
+  });
+
+  autoUpdater.on('download-progress', (progress: ProgressInfo) => {
+    log.info(`Download progress: ${progress.percent.toFixed(1)}%`);
+  });
+
+  autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
+    log.info(`Update downloaded: ${info.version}`);
+    dialog
+      .showMessageBox({
+        type: 'info',
+        title: 'Update ready to install',
+        message: `Version ${info.version} has been downloaded.`,
+        detail: 'Restart the app now to install the update, or it will be installed the next time you quit.',
+        buttons: ['Restart now', 'Later'],
+        defaultId: 0,
+        cancelId: 1,
+      })
+      .then(({ response }) => {
+        if (response === 0) {
+          autoUpdater.quitAndInstall();
+        }
+      });
+  });
+
+  autoUpdater.on('error', (err) => {
+    log.error('autoUpdater error:', err);
+    if (manualUpdateCheck) {
+      dialog.showMessageBox({
+        type: 'error',
+        title: 'Update check failed',
+        message: 'Could not check for updates.',
+        detail: `${err?.message ?? err}\n\nLogs: ${log.transports.file.getFile().path}`,
+        buttons: ['OK'],
+      });
+      manualUpdateCheck = false;
+    }
+  });
+}
+
+function checkForUpdatesManual() {
+  if (isDev) {
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Update check disabled',
+      message: 'Auto-update is disabled in development mode.',
+      buttons: ['OK'],
+    });
+    return;
+  }
+  manualUpdateCheck = true;
+  autoUpdater.checkForUpdates().catch((err) => {
+    log.error('Manual update check failed:', err);
+  });
 }
 
 app.on('ready', () => {
@@ -50,6 +143,7 @@ app.on('ready', () => {
   });
   session.defaultSession.setPermissionCheckHandler(() => false);
 
+  registerAutoUpdaterEvents();
   createWindow();
   createMenu();
 });
@@ -67,7 +161,7 @@ app.on('activate', () => {
 });
 
 function createMenu() {
-  const template: any[] = [
+  const template: Electron.MenuItemConstructorOptions[] = [
     {
       label: 'File',
       submenu: [
@@ -89,6 +183,26 @@ function createMenu() {
         { role: 'cut' },
         { role: 'copy' },
         { role: 'paste' },
+      ],
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'Check for Updates…',
+          click: () => checkForUpdatesManual(),
+        },
+        {
+          label: 'Open Log Folder',
+          click: () => {
+            shell.openPath(path.dirname(log.transports.file.getFile().path));
+          },
+        },
+        { type: 'separator' },
+        {
+          label: `Version ${app.getVersion()}`,
+          enabled: false,
+        },
       ],
     },
   ];

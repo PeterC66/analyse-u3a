@@ -229,12 +229,30 @@ non-negotiable defaults.
   deliberately omits `--publish` so a developer running it on their
   laptop never accidentally uploads to a release.
 - **Auto-updates:** End users don't need to manually re-download. The app checks
-  for new versions on startup; if found, it downloads and applies the update.
-  (Powered by `electron-updater` + GitHub Releases API.)
+  for new versions on startup; if found, it downloads in the background and
+  prompts the user to restart. There is also a `Help → Check for Updates…`
+  menu item for manual checks. (Powered by `electron-updater` + GitHub
+  Releases API.)
+- **Auto-update logging:** `electron-log` is wired in as
+  `autoUpdater.logger`. Every check, download, and error lands in the
+  platform log file (Windows: `%APPDATA%\Analyse u3a\logs\main.log`;
+  macOS: `~/Library/Logs/Analyse u3a/main.log`). The Help menu has an
+  "Open Log Folder" item so users can find it without us having to walk
+  them through paths. **Don't remove the listeners on `error`,
+  `update-available`, `update-not-available`, or `update-downloaded`** —
+  before they were added, update failures were completely silent and
+  v0.1.0 users were stranded on v0.1.0 with no signal that anything had
+  gone wrong.
 - **No code signing for now** (set to free/unsigned). Windows will show a SmartScreen
   warning on first run, but users can click through. When budget allows, obtain
   a code-signing cert and set `certificateFile` + `certificatePassword` in
   `package.json` → `build.win`.
+- **macOS auto-update is currently broken by design.** Squirrel.Mac
+  refuses to apply unsigned updates, so the `update-downloaded` event
+  will never fire on macOS until the app is code-signed. The error
+  surfaces in the log and (on a manual check) in a dialog. Don't remove
+  the macOS auto-update call — it's harmless when it fails — but the
+  fix is code signing, not workaround code.
 - **Development vs. production:** `npm run dev` launches Vite on `127.0.0.1:5173`
   and can be used for quick testing. `npm run build:electron` produces the final
   installers.
