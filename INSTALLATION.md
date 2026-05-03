@@ -49,11 +49,22 @@ The app will launch with a window ready for you to open your Beacon backup file.
 
 ## Updates
 
-The app checks for updates automatically. If an update is available:
-1. A notification will appear
-2. You can choose to update immediately or later
-3. Updates are downloaded automatically and installed on next launch
-4. No action needed from you — updates happen seamlessly
+The app checks for updates automatically when it starts. If a new version is
+available:
+1. It downloads in the background.
+2. When the download finishes you'll see a dialog offering to **Restart now**
+   or **Later**. Choosing Later means the update is applied the next time you
+   quit the app.
+3. You can also check manually any time via **Help → Check for Updates…**.
+
+If updates aren't arriving, open **Help → Open Log Folder** and look in
+`main.log` — every check, download, and error is recorded there. On Windows
+this is `%APPDATA%\Analyse u3a\logs\main.log`.
+
+> **macOS users:** auto-update does not currently work on macOS because the
+> app is not yet code-signed. You'll need to download new releases manually
+> from the GitHub releases page until signing is in place. Windows
+> auto-update is unaffected.
 
 ## Troubleshooting
 
