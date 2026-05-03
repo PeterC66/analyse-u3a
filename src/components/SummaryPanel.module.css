@@ -9,6 +9,15 @@
   background: linear-gradient(135deg, #0066cc, #0052a3);
   color: white;
   padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.headerText {
+  flex: 1;
+  min-width: 0;
 }
 
 .title {
@@ -22,6 +31,25 @@
   font-size: 13px;
   opacity: 0.9;
   word-break: break-all;
+}
+
+.reloadButton {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.reloadButton:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.7);
 }
 
 .content {

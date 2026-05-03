@@ -6,9 +6,10 @@ import styles from './SummaryPanel.module.css';
 interface Props {
   snapshot: Snapshot;
   validationErrors: ValidationError[];
+  onReload: () => void;
 }
 
-export default function SummaryPanel({ snapshot, validationErrors }: Props) {
+export default function SummaryPanel({ snapshot, validationErrors, onReload }: Props) {
   const [showValidationDetails, setShowValidationDetails] = useState(false);
 
   const { backup, filename, date, time } = snapshot;
@@ -30,8 +31,17 @@ export default function SummaryPanel({ snapshot, validationErrors }: Props) {
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
-        <h2 className={styles.title}>Backup Loaded</h2>
-        <p className={styles.filename}>{filename}</p>
+        <div className={styles.headerText}>
+          <h2 className={styles.title}>Backup Loaded</h2>
+          <p className={styles.filename}>{filename}</p>
+        </div>
+        <button
+          type="button"
+          className={styles.reloadButton}
+          onClick={onReload}
+        >
+          Load another backup…
+        </button>
       </div>
 
       <div className={styles.content}>

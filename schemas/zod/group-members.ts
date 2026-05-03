@@ -12,8 +12,8 @@ export const groupMemberRow = z.object({
   gkey: zString,
   group_name: zString,
   mem_no: zInt,
-  forename: zString,
-  surname: zString,
+  forename: zStringNullable,
+  surname: zStringNullable,
   added: zDateNullable,
   // `waiting` may be a date string OR the literal '0' OR null. We keep it as
   // a nullable string here; downstream code should treat '0' as "not waiting".

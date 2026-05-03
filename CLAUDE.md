@@ -172,6 +172,19 @@ These mirror Beacon2's conventions where applicable.
   config-only — never member data.
 - **Validate at the boundary.** Use Zod when the file is read; trust the
   parsed types everywhere else.
+- **PII fields must tolerate blanks (anonymised backups).** A treasurer
+  may anonymise a backup before sharing it for testing or screenshots,
+  blanking out names, addresses, phone numbers, etc. Personal-data
+  string fields should therefore be `zStringNullable`, not `zString`,
+  so a row with an empty name still loads. Currently relaxed:
+  `Members.forename`, `Members.surname`, `Group members.forename`,
+  `Group members.surname` (plus everything that was already nullable).
+  When a new analysis or load failure surfaces another required PII
+  field that breaks on a blank value, relax it the same way (and add a
+  short test to `parseSheet.test.ts` proving it). Structural fields
+  (keys like `mkey`, `gkey`; classifiers like `status`, `class`;
+  `Groups.group_name`) stay required — a blank there is a genuinely
+  broken row, not anonymisation.
 - **Date format internally:** `YYYY-MM-DD` strings. The Zod helpers already
   coerce to this.
 - **No SQL string concatenation.** If you use SQLite, parameterise queries.

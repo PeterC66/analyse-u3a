@@ -123,3 +123,19 @@ describe('parseSheet error path', () => {
     ).toThrowError(/Sheet "Members" row 2/);
   });
 });
+
+describe('parseSheet — anonymised name fields', () => {
+  it('accepts a Members row with empty forename and surname', () => {
+    const row = { ...FIXTURES.Members[0], forename: '', surname: '' };
+    const parsed = parseSheet('Members', [row]);
+    expect(parsed[0].forename).toBeNull();
+    expect(parsed[0].surname).toBeNull();
+  });
+
+  it('accepts a Group members row with empty forename and surname', () => {
+    const row = { ...FIXTURES['Group members'][0], forename: '', surname: '' };
+    const parsed = parseSheet('Group members', [row]);
+    expect(parsed[0].forename).toBeNull();
+    expect(parsed[0].surname).toBeNull();
+  });
+});
