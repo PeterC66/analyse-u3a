@@ -1,5 +1,4 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background gradient -->
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#2c3e50;stop-opacity:1" />
@@ -7,22 +6,13 @@
     </linearGradient>
   </defs>
 
-  <!-- Background -->
   <rect width="512" height="512" fill="url(#bg)"/>
 
-  <!-- Title: Analyse u3a - simple chart icon with growth arrow -->
-
-  <!-- Bar chart -->
-  <rect x="120" y="300" width="50" height="80" fill="#ffffff" rx="4"/>
-  <rect x="190" y="260" width="50" height="120" fill="#ffffff" rx="4"/>
-  <rect x="260" y="280" width="50" height="100" fill="#ffffff" rx="4"/>
-  <rect x="330" y="240" width="50" height="140" fill="#ffffff" rx="4"/>
-
-  <!-- Growth arrow -->
-  <g stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <!-- Arrow line -->
-    <line x1="420" y1="280" x2="420" y2="120"/>
-    <!-- Arrow head -->
-    <polyline points="420,120 400,150 440,150"/>
+  <!-- Bar chart in white, ascending -->
+  <g fill="#ffffff">
+    <rect x="96"  y="320" width="64" height="96"  rx="8"/>
+    <rect x="184" y="272" width="64" height="144" rx="8"/>
+    <rect x="272" y="208" width="64" height="208" rx="8"/>
+    <rect x="360" y="128" width="64" height="288" rx="8"/>
   </g>
 </svg>
