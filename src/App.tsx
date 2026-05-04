@@ -73,6 +73,14 @@ export default function App() {
     setState('idle');
   };
 
+  const handleReload = () => {
+    setSnapshot(null);
+    setValidationErrors([]);
+    setPendingFile(null);
+    setView({ kind: 'menu' });
+    setState('idle');
+  };
+
   const loadAndSetSnapshot = async (
     file: File,
     arrayBuffer: ArrayBuffer,
@@ -101,7 +109,9 @@ export default function App() {
           Local analysis tool for Beacon membership backups
         </p>
         {releaseMessage.message && (
-          <p className={styles.releaseMessage}>{releaseMessage.message}</p>
+          <p className={styles.releaseMessage}>
+            {releaseMessage.message.replace('{version}', __APP_VERSION__)}
+          </p>
         )}
       </header>
 
@@ -129,7 +139,11 @@ export default function App() {
           <div className={styles.loadedContent}>
             {view.kind === 'menu' && (
               <>
-                <SummaryPanel snapshot={snapshot} validationErrors={validationErrors} />
+                <SummaryPanel
+                  snapshot={snapshot}
+                  validationErrors={validationErrors}
+                  onReload={handleReload}
+                />
                 <AnalysisMenu
                   onSelectCategory={(categoryId) => setView({ kind: 'category', categoryId })}
                 />

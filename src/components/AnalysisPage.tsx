@@ -41,6 +41,11 @@ export default function AnalysisPage({ analysisId, snapshot, onBack }: Props) {
       <header className={styles.header}>
         <h2 className={styles.title}>{analysis.title}</h2>
         <p className={styles.description}>{analysis.description}</p>
+        <p className={styles.scope}>
+          {(analysis.scope ?? 'current') === 'current'
+            ? 'Current members only (status = Current or Honorary).'
+            : 'All members (including lapsed, resigned, deceased).'}
+        </p>
       </header>
 
       <section className={styles.chartSection}>

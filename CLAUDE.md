@@ -172,6 +172,19 @@ These mirror Beacon2's conventions where applicable.
   config-only — never member data.
 - **Validate at the boundary.** Use Zod when the file is read; trust the
   parsed types everywhere else.
+- **PII fields must tolerate blanks (anonymised backups).** A treasurer
+  may anonymise a backup before sharing it for testing or screenshots,
+  blanking out names, addresses, phone numbers, etc. Personal-data
+  string fields should therefore be `zStringNullable`, not `zString`,
+  so a row with an empty name still loads. Currently relaxed:
+  `Members.forename`, `Members.surname`, `Group members.forename`,
+  `Group members.surname` (plus everything that was already nullable).
+  When a new analysis or load failure surfaces another required PII
+  field that breaks on a blank value, relax it the same way (and add a
+  short test to `parseSheet.test.ts` proving it). Structural fields
+  (keys like `mkey`, `gkey`; classifiers like `status`, `class`;
+  `Groups.group_name`) stay required — a blank there is a genuinely
+  broken row, not anonymisation.
 - **Date format internally:** `YYYY-MM-DD` strings. The Zod helpers already
   coerce to this.
 - **No SQL string concatenation.** If you use SQLite, parameterise queries.
@@ -320,6 +333,19 @@ The five categories in `CATEGORIES` are fixed UI cards. Don't add a sixth
 category lightly — front-page card real estate is the user's primary
 mental model. New work should usually mean a new analysis under an
 existing category, not a new category.
+
+**Default member scope: current members only.** Beacon's locked,
+default-shipped statuses are `Current`, `Lapsed`, `Resigned`,
+`Deceased`. By policy, every analysis filters to **current members**
+— defined as `Members.status` matching `Current` or `Honorary`
+(case-insensitively) — unless its purpose specifically requires the
+wider population (e.g. churn, joiners/leavers, lifetime history). Use
+the `currentMembers(...)` / `isCurrentMember(...)` helpers in
+`src/analyses/members.ts`; do **not** filter by status string in each
+analysis. Analyses that need the wider population must set
+`scope: 'all'` on their `AnalysisDefinition` so the AnalysisPage
+shows "All members" instead of "Current members only" — the user
+should never have to guess which population a chart represents.
 
 ### Snapshot type — designed for multi-file mode
 
