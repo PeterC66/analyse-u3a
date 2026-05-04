@@ -1,14 +1,15 @@
 import type { AnalysisDefinition } from '../types.js';
+import { currentMembers } from '../members.js';
 
 export const countByClass: AnalysisDefinition = {
   id: 'membership-count-by-class',
   categoryId: 'membership-patterns',
   title: 'Members by Class',
-  description: 'Count of members in each membership class.',
+  description: 'Count of current members in each membership class.',
   run: (snapshots) => {
     const snap = snapshots[0];
     const counts = new Map<string, number>();
-    for (const m of snap.backup.members) {
+    for (const m of currentMembers(snap.backup.members)) {
       counts.set(m.class, (counts.get(m.class) ?? 0) + 1);
     }
 

@@ -334,6 +334,19 @@ category lightly — front-page card real estate is the user's primary
 mental model. New work should usually mean a new analysis under an
 existing category, not a new category.
 
+**Default member scope: current members only.** Beacon's locked,
+default-shipped statuses are `Current`, `Lapsed`, `Resigned`,
+`Deceased`. By policy, every analysis filters to **current members**
+— defined as `Members.status` matching `Current` or `Honorary`
+(case-insensitively) — unless its purpose specifically requires the
+wider population (e.g. churn, joiners/leavers, lifetime history). Use
+the `currentMembers(...)` / `isCurrentMember(...)` helpers in
+`src/analyses/members.ts`; do **not** filter by status string in each
+analysis. Analyses that need the wider population must set
+`scope: 'all'` on their `AnalysisDefinition` so the AnalysisPage
+shows "All members" instead of "Current members only" — the user
+should never have to guess which population a chart represents.
+
 ### Snapshot type — designed for multi-file mode
 
 `src/state/types.ts` defines `Snapshot` (a `BeaconBackup` plus its
