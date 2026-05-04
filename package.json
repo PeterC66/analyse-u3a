@@ -65,7 +65,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "artifactName": "${name}-Setup-${version}.${ext}"
     },
     "mac": {
       "target": [
@@ -85,10 +86,12 @@
         }
       ],
       "category": "public.app-category.productivity",
-      "identity": null
+      "identity": null,
+      "artifactName": "${name}-${version}-${arch}-mac.${ext}"
     },
     "dmg": {
-      "sign": false
+      "sign": false,
+      "artifactName": "${name}-${version}-${arch}.${ext}"
     },
     "publish": {
       "provider": "github",

@@ -241,6 +241,19 @@ non-negotiable defaults.
 - The local `build:electron` script (`npm run build && electron-builder`)
   deliberately omits `--publish` so a developer running it on their
   laptop never accidentally uploads to a release.
+- **Installer filenames must use `${name}` (kebab-case), not `${productName}`.**
+  `productName` is `Analyse u3a`, which contains a space, and that space
+  is mangled three different ways across the release pipeline:
+  electron-builder's default `artifactName` writes the file on disk as
+  `Analyse u3a Setup X.Y.Z.exe`, but writes a *dash-sanitised* path
+  (`Analyse-u3a-Setup-X.Y.Z.exe`) into `latest.yml`, while
+  `softprops/action-gh-release` (or GitHub itself) replaces spaces with
+  *dots* on upload (`Analyse.u3a.Setup.X.Y.Z.exe`). Auto-update then
+  fetches the URL from `latest.yml` and 404s — exactly what stranded
+  v0.1.4/v0.1.5 users. The `nsis`/`mac`/`dmg` `artifactName` overrides
+  in `package.json` use `${name}` (= `analyse-u3a`) so the on-disk name,
+  `latest.yml`, and the uploaded asset name all agree. Don't revert these
+  back to `${productName}` defaults.
 - **Auto-updates:** End users don't need to manually re-download. The app checks
   for new versions on startup; if found, it downloads in the background and
   prompts the user to restart. There is also a `Help → Check for Updates…`
