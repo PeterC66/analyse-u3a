@@ -98,8 +98,28 @@
             <a href="https://github.com/peterc66/analyse-u3a" target="_blank">source code</a>.</li>
       </ul>
       <p class="note">
+        <strong>macOS users:</strong> the app is not yet code-signed for
+        macOS either, so after dragging it to Applications you may see
+        <em>"Analyse u3a is damaged and can't be opened"</em> on first
+        launch. The file is <strong>not</strong> actually damaged — macOS
+        is refusing to run an unsigned app downloaded from the internet.
+        To fix it:
+      </p>
+      <ul class="note">
+        <li>Open the <strong>Terminal</strong> app (Applications → Utilities → Terminal).</li>
+        <li>Paste this single line and press Return:
+          <pre><code>xattr -cr "/Applications/Analyse u3a.app"</code></pre>
+        </li>
+        <li>Now double-click "Analyse u3a" in Applications — it will open normally.</li>
+        <li>Make sure you downloaded the right build: <strong>Apple Silicon</strong>
+            for M1/M2/M3/M4 Macs, <strong>Intel</strong> for older Macs.
+            See the
+            <a href="https://github.com/peterc66/analyse-u3a/blob/main/INSTALLATION.md#macos" target="_blank">full macOS install guide</a>
+            if you're unsure.</li>
+      </ul>
+      <p class="note">
         A code-signing certificate is planned for a future release, which will
-        eliminate most of these warnings.
+        eliminate most of these warnings on both Windows and macOS.
       </p>
     </section>
 
