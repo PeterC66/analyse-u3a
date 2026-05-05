@@ -67,13 +67,19 @@ npm run dev
 This starts a Vite dev server bound to `127.0.0.1:5173`. Open it in your browser, then:
 
 1. Drag your Beacon backup (`.xlsx`) onto the page, or click **"Open File..."**
-2. The app extracts the backup date/time from the filename (pattern: `YYYYMMDDHHMM_*.xlsx`).
-   If the filename doesn't match, you'll be prompted to enter the date manually.
+2. The app extracts the backup date/time and u3a name from the filename
+   (pattern: `YYYYMMDDHHMM_<u3a name> u3abackup.xlsx`). If the filename
+   doesn't match, you'll be prompted to enter the date manually.
 3. The file is validated against the schemas — structural problems halt the load;
    individual bad rows are reported and skipped.
-4. Once loaded, you'll see a summary panel and a grid of analysis cards. Click
-   a card to open its list of analyses, then click an analysis to see its chart
-   and table, with download buttons for CSV, XLSX, and SVG (chart).
+4. Once loaded, you'll see a snapshot list (drop more backups onto it to add
+   them), a summary panel for the latest snapshot, and a grid of analysis
+   cards. Click a card to open its list of analyses, then click an analysis
+   to see its chart and table, with download buttons for CSV, XLSX, and SVG.
+5. **Multiple backups for the same u3a:** each new file is checked against
+   the u3a name in the filename. If it doesn't match the loaded set, you'll
+   be asked to confirm before it's added. Trend analyses (e.g. *Total
+   membership over time*) light up once two or more backups are loaded.
 
 #### Building the Desktop App (Electron)
 
@@ -171,9 +177,11 @@ analyse-u3a/
 │   ├── components/
 │   │   ├── FileDropzone.*       — drag-and-drop + file picker
 │   │   ├── ManualDatePrompt.*   — fallback when filename doesn't match pattern
-│   │   ├── SummaryPanel.*       — counts + validation status
+│   │   ├── ConfirmU3aPrompt.*   — same-u3a confirmation when filename u3a tag mismatches
+│   │   ├── SnapshotList.*       — list of loaded backups + per-snapshot remove + add-another
+│   │   ├── SummaryPanel.*       — counts for the latest snapshot
 │   │   ├── AnalysisMenu.*       — front-page grid of analysis category cards
-│   │   ├── CategoryPage.*       — per-category list of available analyses
+│   │   ├── CategoryPage.*       — per-category list of available analyses (badges trend / comparison / locked)
 │   │   ├── AnalysisPage.*       — chart + table + downloads for one analysis
 │   │   ├── DataTable.*          — sortable table (shared)
 │   │   ├── AnalysisChart.*      — Recharts wrapper driven by ChartConfig
@@ -226,6 +234,7 @@ CSV / XLSX / SVG download buttons. Adding a new analysis is two small steps:
      categoryId: 'membership-patterns',
      title: 'Joiners by Year',
      description: 'New member joins per calendar year.',
+     // snapshots: 'latest' (default), 'all' (time-series), or 'pairs'
      run: (snapshots) => {
        const snap = snapshots[0];
        // ...derive { columns, rows } from snap.backup
@@ -255,9 +264,26 @@ That's it. The category page picks it up via `categoryId`; the analysis page
 renders it via the shared `DataTable` / `AnalysisChart` / `DownloadBar`. No
 UI changes needed.
 
-`run` receives `Snapshot[]` rather than a single `Snapshot` so analyses can
-keep working unchanged when multi-file (trend-over-time) mode lands. For now
-exactly one snapshot is passed.
+`run` receives `Snapshot[]`. The `snapshots` field on `AnalysisDefinition`
+controls which snapshots get passed:
+
+- **`'latest'`** (default) — only the most recent snapshot. Existing
+  single-snapshot analyses use this.
+- **`'all'`** — every loaded snapshot, sorted oldest → newest. For
+  time-series / trend analyses (e.g. *Total membership over time*).
+- **`'pairs'`** — every loaded snapshot; the analysis walks consecutive
+  pairs itself. Reserved for joiners/leavers diff analyses.
+
+Analyses with `snapshots: 'all'` or `'pairs'` are gated behind ≥ 2 loaded
+snapshots — opening one with only one snapshot loaded shows an empty state
+asking the user to load another backup.
+
+**Cumulative-vs-point-in-time gotcha:** `Ledger`, `Detail`, `Group Ledgers`,
+and `Calendar` already contain full history in *every* backup. Read them
+from the latest snapshot only — never aggregate them across snapshots, or
+income / events will be double-counted. Only the point-in-time sheets
+(`Members`, `Group members`, `Groups`, `Membership Classes`, etc.) are
+worth comparing across snapshots.
 
 ### Type-checking
 

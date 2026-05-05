@@ -1,22 +1,32 @@
 /**
- * Extract backup date and time from filename pattern YYYYMMDDHHMM_*.xlsx
- * Returns { date: 'YYYY-MM-DD', time: 'HH:MM' } or null if no match.
+ * Extract backup date, time, and u3a name from a Beacon backup filename.
+ *
+ * Beacon's exporter uses `YYYYMMDDHHMM_<u3a name> u3abackup.xlsx` (the
+ * trailing ` u3abackup` sentinel is sometimes underscore-separated and the
+ * casing varies). The u3a name is only returned when the sentinel is
+ * present — if the user has renamed the file we leave it null rather than
+ * guessing, so the same-u3a check stays trustworthy.
+ *
+ * Returns null if the timestamp prefix is missing or invalid.
  */
 export function parseBackupFilename(
   filename: string,
-): { date: string; time: string } | null {
+): { date: string; time: string; u3aName: string | null } | null {
   const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})_/.exec(filename);
   if (!m) return null;
 
-  const [, y, mo, d, h, mi] = m;
+  const [prefix, y, mo, d, h, mi] = m;
   const dateStr = `${y}-${mo}-${d}`;
   const timeStr = `${h}:${mi}`;
 
-  // Validate it's a real date (at least roughly).
   const dt = new Date(`${dateStr}T${timeStr}:00`);
   if (isNaN(dt.getTime())) return null;
 
-  return { date: dateStr, time: timeStr };
+  const rest = filename.slice(prefix.length).replace(/\.xlsx$/i, '');
+  const u3aMatch = /^(.+?)[ _]u3abackup$/i.exec(rest);
+  const u3aName = u3aMatch ? u3aMatch[1].trim() || null : null;
+
+  return { date: dateStr, time: timeStr, u3aName };
 }
 
 /**

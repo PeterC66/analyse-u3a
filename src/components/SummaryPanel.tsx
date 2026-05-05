@@ -1,18 +1,12 @@
-import { useState } from 'react';
-import type { Snapshot, ValidationError } from '../state/types.js';
-import ValidationDetails from './ValidationDetails.js';
+import type { Snapshot } from '../state/types.js';
 import styles from './SummaryPanel.module.css';
 
 interface Props {
   snapshot: Snapshot;
-  validationErrors: ValidationError[];
-  onReload: () => void;
 }
 
-export default function SummaryPanel({ snapshot, validationErrors, onReload }: Props) {
-  const [showValidationDetails, setShowValidationDetails] = useState(false);
-
-  const { backup, filename, date, time } = snapshot;
+export default function SummaryPanel({ snapshot }: Props) {
+  const { backup, date, time } = snapshot;
 
   const memberCount = backup.members.length;
   const groupCount = backup.groups.length;
@@ -32,16 +26,8 @@ export default function SummaryPanel({ snapshot, validationErrors, onReload }: P
     <div className={styles.panel}>
       <div className={styles.header}>
         <div className={styles.headerText}>
-          <h2 className={styles.title}>Backup Loaded</h2>
-          <p className={styles.filename}>{filename}</p>
+          <h2 className={styles.title}>Latest snapshot</h2>
         </div>
-        <button
-          type="button"
-          className={styles.reloadButton}
-          onClick={onReload}
-        >
-          Load another backup…
-        </button>
       </div>
 
       <div className={styles.content}>
@@ -77,36 +63,7 @@ export default function SummaryPanel({ snapshot, validationErrors, onReload }: P
             </div>
           </div>
         </div>
-
-        {validationErrors.length > 0 && (
-          <div className={styles.warningSection}>
-            <div className={styles.warningTitle}>⚠️ Validation Issues</div>
-            <p className={styles.warningMessage}>
-              {validationErrors.length} row(s) could not be parsed and were skipped.
-              Analyses will run on valid data only.
-            </p>
-            <button
-              className={styles.detailsButton}
-              onClick={() => setShowValidationDetails(true)}
-            >
-              View Details
-            </button>
-          </div>
-        )}
-
-        {validationErrors.length === 0 && (
-          <div className={styles.successSection}>
-            ✓ All sheets loaded cleanly
-          </div>
-        )}
       </div>
-
-      {showValidationDetails && (
-        <ValidationDetails
-          errors={validationErrors}
-          onClose={() => setShowValidationDetails(false)}
-        />
-      )}
     </div>
   );
 }

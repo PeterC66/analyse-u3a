@@ -6,6 +6,7 @@ describe('parseBackupFilename', () => {
     expect(parseBackupFilename('202603311930_backup.xlsx')).toEqual({
       date: '2026-03-31',
       time: '19:30',
+      u3aName: null,
     });
   });
 
@@ -13,6 +14,7 @@ describe('parseBackupFilename', () => {
     expect(parseBackupFilename('202101010000_anything-goes_here.xlsx')).toEqual({
       date: '2021-01-01',
       time: '00:00',
+      u3aName: null,
     });
   });
 
@@ -28,6 +30,40 @@ describe('parseBackupFilename', () => {
 
   it('returns null for an impossible date (month 13)', () => {
     expect(parseBackupFilename('202613311930_backup.xlsx')).toBeNull();
+  });
+
+  it('extracts the u3a name when the " u3abackup" sentinel is present', () => {
+    expect(
+      parseBackupFilename('202603170140_St Ives Cambridge Demo24 u3abackup.xlsx'),
+    ).toEqual({
+      date: '2026-03-17',
+      time: '01:40',
+      u3aName: 'St Ives Cambridge Demo24',
+    });
+  });
+
+  it('accepts an underscore between the name and the sentinel', () => {
+    expect(parseBackupFilename('202101010000_My U3A_u3abackup.xlsx')).toEqual({
+      date: '2021-01-01',
+      time: '00:00',
+      u3aName: 'My U3A',
+    });
+  });
+
+  it('treats the sentinel case-insensitively', () => {
+    expect(parseBackupFilename('202101010000_Foobar U3ABACKUP.XLSX')).toEqual({
+      date: '2021-01-01',
+      time: '00:00',
+      u3aName: 'Foobar',
+    });
+  });
+
+  it('returns null u3aName when the sentinel is missing', () => {
+    expect(parseBackupFilename('202101010000_some-renamed-file.xlsx')).toEqual({
+      date: '2021-01-01',
+      time: '00:00',
+      u3aName: null,
+    });
   });
 });
 
