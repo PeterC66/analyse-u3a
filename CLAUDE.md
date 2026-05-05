@@ -205,11 +205,25 @@ non-negotiable defaults.
 ### Stack
 
 - **Electron + electron-updater** wraps the React app as a native desktop
-  application for Windows and macOS. **No browser-based URL bar or navigation.**
-  Users get a `.exe` (Windows) or `.dmg` (macOS) installer; the bundled Node.js
-  runs everything locally. Auto-updates are handled by `electron-updater`.
+  application for Windows and macOS. Users get a `.exe` (Windows) or
+  `.dmg` (macOS) installer; the bundled Node.js runs everything locally.
+  Auto-updates are handled by `electron-updater`.
+- **Hosted web build ships the same React bundle as a static GitHub Pages
+  site at `/analyse-u3a/app/`.** This is a deliberate reversal of the
+  original "No browser-based URL bar or navigation" stance. Rationale:
+  code-signing the desktop app costs ~$99/yr (macOS) and ~$300+/yr
+  (Windows EV) and the unsigned-app friction ("is damaged" /
+  SmartScreen) was actively turning users away. A hosted static page
+  sidesteps both — there is no installable executable for an OS to gate
+  on. The privacy invariant is preserved by a strict
+  `Content-Security-Policy` meta tag (notably `connect-src 'none'`) that
+  forbids the page from making any outbound network call. **Both
+  variants must remain supported** — don't make changes that work in
+  one and break the other.
 - **Vite + React 18 + TypeScript** as the app UI layer (client-side only).
-  **No backend.** ExcelJS reads the file via the File API.
+  **No backend.** ExcelJS reads the file via the File API. The same
+  source produces both the Electron renderer and the hosted bundle —
+  see *Build targets* below.
 - **electron-builder** packages Electron + React bundle into platform-specific
   installers (NSIS for Windows, DMG for macOS).
 - **Zod pinned to `^3.23.8`.** Zod 4 has breaking API changes that don't fit
@@ -219,6 +233,53 @@ non-negotiable defaults.
   surprise CDN fetches.
 - **No state library.** Plain `useState` in `App.tsx` is enough for the
   current scope. Don't reach for Redux / Zustand / etc. without need.
+
+### Build targets — Electron vs hosted web
+
+`vite.config.ts` is a `defineConfig(({ mode }) => ...)` callback that
+branches on `mode === 'web'`:
+
+| | Electron renderer | Hosted web app |
+|--|--|--|
+| Trigger | `npm run build` (default mode) | `npm run build:web` (`--mode web`) |
+| `base` | `'./'` (file:// relative) | `'/analyse-u3a/app/'` (GH Pages path) |
+| `outDir` | `dist/` (consumed by electron-builder) | `docs/app/` (gitignored, deployed by Pages workflow) |
+| CSP meta | not injected (Electron sets its own via `webPreferences`) | strict CSP with `connect-src 'none'` injected by an inline `transformIndexHtml` plugin |
+| `__BUILD_TARGET__` | `'electron'` | `'web'` |
+
+**Privacy invariants for the hosted build.** The injected CSP is the
+mechanism that makes "your data never leaves the page" provable. Don't
+weaken it. In particular:
+
+- `connect-src 'none'` is non-negotiable — no `fetch`, no XHR, no
+  WebSocket. If a future feature genuinely needs an outbound call (e.g.
+  a "check for new version" link), it must be a plain `<a href>` to
+  GitHub, not a programmatic fetch.
+- `script-src 'self'` — no inline scripts, no CDN. Vite produces
+  external script chunks by default; keep it that way.
+- `style-src 'self' 'unsafe-inline'` — required because Recharts (and
+  React's `style={{...}}` in general) emit inline `style` attributes.
+  This is acceptable because no user-supplied HTML is ever injected
+  into the DOM, so there is no XSS amplification surface.
+- No service worker. A stale-cache bug in a service worker would let
+  old code run after a CSP-tightening release; reloading the page must
+  always pull the latest bundle.
+
+**Deployment.** `.github/workflows/pages.yml` runs `npm run build:web`
+on every push to `main`, then deploys `docs/` (which now contains the
+freshly-built `docs/app/`) via `actions/deploy-pages`. One-time setup:
+in the repo's GitHub settings → Pages, set the source to "GitHub
+Actions" (instead of "Deploy from a branch"). Don't switch back to
+branch-based deploy — `docs/app/` is gitignored, so a branch deploy
+would publish the marketing page without the app.
+
+**Renderer code must stay browser-safe.** The React side has no
+Electron-only imports today (`window.electron` is exposed by
+`electron/preload.ts` but unused in `src/`). Don't reach for Node
+APIs, IPC, or `window.electron.*` from `src/` without first guarding on
+`__BUILD_TARGET__ === 'electron'` — anything that crashes the hosted
+build is a privacy regression because it pushes users back to the
+unsigned installer route.
 
 ### Electron deployment strategy
 
@@ -459,10 +520,16 @@ disk, or anywhere else.
 - **Auto-updates check GitHub Releases API only** — no member data is sent.
   The update check is deterministic and can be inspected in electron logs.
 - **No external HTTP at runtime except update checks.** No analytics, no
-  telemetry, no remote LLM calls, no CDN fetches for assets.
+  telemetry, no remote LLM calls, no CDN fetches for assets. The hosted
+  web build doesn't even allow update checks: its CSP sets
+  `connect-src 'none'`, so the browser refuses any outbound request.
 - **No `localStorage` / `sessionStorage` for member data.** In-memory only
   while the file is loaded. Only non-PII config (e.g. user's chosen
   renewal-category list) may be persisted.
+- **Hosted web build is provably local-only.** Served as static files
+  from GitHub Pages with a strict CSP that blocks all outbound network
+  traffic. A user can verify this in browser dev-tools (Network tab
+  shows zero requests after page load). See *Build targets* above.
 
 ### Tests and CI
 

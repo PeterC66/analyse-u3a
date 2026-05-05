@@ -27,15 +27,29 @@ The backup file contains personal data (names, addresses, phone numbers, emails)
 
 ### For End Users
 
-Download the latest installer for your operating system:
+Two ways to use Analyse u3a:
 
-- **Windows:** `Analyse-u3a-0.0.1.exe` from [Releases](https://github.com/peterc66/analyse-u3a/releases)
-- **macOS:** `Analyse-u3a-0.0.1.dmg` from [Releases](https://github.com/peterc66/analyse-u3a/releases)
+**1. In your browser (no install)** — open
+[https://peterc66.github.io/analyse-u3a/app/](https://peterc66.github.io/analyse-u3a/app/)
+and drop your Beacon backup onto the page. The page is a static bundle
+served by GitHub Pages; everything runs in the browser tab and the page's
+Content-Security-Policy blocks all outbound network calls, so member data
+still never leaves your machine.
+
+**2. As a desktop app** — download the latest installer for your
+operating system from [Releases](https://github.com/peterc66/analyse-u3a/releases):
+
+- **Windows:** `analyse-u3a-Setup-X.Y.Z.exe`
+- **macOS (Apple Silicon):** `analyse-u3a-X.Y.Z-arm64.dmg`
+- **macOS (Intel):** `analyse-u3a-X.Y.Z-x64.dmg`
 
 Run the installer and follow the prompts. The app will check for updates automatically.
 
-> **First run note:** Windows may show a "SmartScreen" warning since the app is unsigned.
-> Click "More info" → "Run anyway" to proceed. Future signed releases will skip this step.
+> **First run note:** Windows may show a "SmartScreen" warning and macOS
+> may say the app "is damaged" — both are because the app isn't yet
+> code-signed. See [INSTALLATION.md](INSTALLATION.md) for the
+> click-through and `xattr -cr` workarounds. The browser version
+> sidesteps both.
 
 ### For Developers
 
@@ -123,6 +137,7 @@ The Zod schemas in `schemas/zod/index.ts` are the runtime source of truth for da
 | Layer | Technology | Why |
 |-------|-----------|-----|
 | Desktop App | Electron + electron-updater | Native Windows/macOS apps with auto-updates |
+| Hosted Web App | Vite + GitHub Pages | Same React bundle, served statically; strict CSP keeps data local |
 | Runtime | Node.js (LTS) | Cross-platform, ships with Electron |
 | Language | TypeScript | Strict type safety; schemas are TS-native |
 | Excel parsing | exceljs | Battle-tested, same library as Beacon2 |
@@ -130,7 +145,7 @@ The Zod schemas in `schemas/zod/index.ts` are the runtime source of truth for da
 | UI | Vite + React | Fast dev loop, locally-bundled |
 | Packaging | electron-builder | Creates .exe (Windows) and .dmg (macOS) installers |
 | Charts | recharts | Locally bundled, React-idiomatic; pinned in `package.json` |
-| Storage | In-memory or SQLite | SQLite optional for snapshot comparisons |
+| Storage | In-memory only | Snapshots live in memory; never persisted to disk or browser storage |
 
 ## Important Limitations
 
@@ -324,13 +339,29 @@ remains separate and only runs on `v*` tags.
 
 ### Building for Production
 
-**Web build (development/testing only):**
+**Hosted web app (deployed to GitHub Pages):**
+
+```bash
+npm run build:web
+```
+
+Output goes to `docs/app/`. The bundle has a strict
+`Content-Security-Policy` injected (including `connect-src 'none'`) so the
+page provably cannot make outbound network calls — that's how the privacy
+guarantee survives off the desktop. `docs/app/` is gitignored; on push to
+`main`, `.github/workflows/pages.yml` builds it fresh and publishes the
+whole `docs/` tree to GitHub Pages via `actions/deploy-pages`. (One-time
+setup: in GitHub repo settings → Pages, set the source to "GitHub
+Actions".)
+
+**Vite-only bundle (intermediate output for the Electron build):**
 
 ```bash
 npm run build
 ```
 
-Output is in `dist/`. This creates a static bundle but is not used in distribution.
+Output is in `dist/`. This is what `electron-builder` consumes; not used
+on its own.
 
 **Desktop app build (for distribution):**
 
@@ -338,10 +369,10 @@ Output is in `dist/`. This creates a static bundle but is not used in distributi
 npm run build:electron
 ```
 
-This creates platform-specific installers:
-- `dist/Analyse-u3a-0.0.1.exe` (Windows NSIS installer)
-- `dist/Analyse-u3a-0.0.1.dmg` (macOS disk image)
-- `dist/Analyse-u3a-0.0.1.zip` (macOS portable)
+This creates platform-specific installers in `dist/`:
+- `analyse-u3a-Setup-X.Y.Z.exe` (Windows NSIS installer)
+- `analyse-u3a-X.Y.Z-arm64.dmg` / `analyse-u3a-X.Y.Z-x64.dmg` (macOS disk images)
+- `analyse-u3a-X.Y.Z-arm64-mac.zip` / `analyse-u3a-X.Y.Z-x64-mac.zip` (macOS portable)
 
 ### Releasing to Users
 
