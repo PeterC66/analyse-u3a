@@ -41,7 +41,7 @@ const FIXTURES: { [N in SheetName]: Record<string, unknown>[] } = {
   Groups: [
     {
       gkey: 'G1', group_name: 'French Conversation', faculty: 'Languages',
-      venue: 'Village Hall', status: 'Active', info: null,
+      venue: 'Village Hall', status: 1, info: null,
       meets_when: 'Monday 10:00', start_time: '10:00', end_time: '12:00',
       members: 8, max_members: 12, notes: null, contact: null,
       join_online: 0, leave_online: 0, waiting_list: 0, notify_leader: 0,

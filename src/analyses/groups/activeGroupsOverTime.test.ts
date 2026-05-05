@@ -3,21 +3,21 @@ import { activeGroupsOverTime } from './activeGroupsOverTime.js';
 import { fakeGroup, fakeSnapshot } from '../_test-helpers.js';
 
 describe('activeGroupsOverTime', () => {
-  it('counts groups with status Active per snapshot, case-insensitively', () => {
+  it('counts groups whose status flag is true per snapshot', () => {
     const result = activeGroupsOverTime.run([
       fakeSnapshot('2024-04-01', {
         groups: [
-          fakeGroup('A', 'Active'),
-          fakeGroup('B', 'Active'),
-          fakeGroup('C', 'Suspended'),
+          fakeGroup('A', true),
+          fakeGroup('B', true),
+          fakeGroup('C', false),
         ],
       }),
       fakeSnapshot('2025-04-01', {
         groups: [
-          fakeGroup('A', 'active'),
-          fakeGroup('B', 'Active'),
-          fakeGroup('C', 'Active'),
-          fakeGroup('D', 'Closed'),
+          fakeGroup('A', true),
+          fakeGroup('B', true),
+          fakeGroup('C', true),
+          fakeGroup('D', false),
         ],
       }),
     ]);

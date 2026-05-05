@@ -11,9 +11,7 @@ export const activeGroupsOverTime: AnalysisDefinition = {
   run: (snapshots) => {
     const rows = snapshots.map((s) => ({
       date: s.date,
-      groups: s.backup.groups.filter(
-        (g) => g.status.toLowerCase() === 'active',
-      ).length,
+      groups: s.backup.groups.filter((g) => g.status).length,
     }));
 
     return {

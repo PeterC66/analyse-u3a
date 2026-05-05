@@ -11,9 +11,7 @@ export const avgGroupSizeOverTime: AnalysisDefinition = {
   run: (snapshots) => {
     const rows = snapshots.map((s) => {
       const activeGkeys = new Set(
-        s.backup.groups
-          .filter((g) => g.status.toLowerCase() === 'active')
-          .map((g) => g.gkey),
+        s.backup.groups.filter((g) => g.status).map((g) => g.gkey),
       );
 
       const sizesByGkey = new Map<string, number>();

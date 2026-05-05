@@ -52,7 +52,7 @@ The interest groups themselves. The unit of "what people do at u3a."
 | `group_name` | string | no | Display name (also the FK target for `Ledger.group`) |
 | `faculty` | string | yes | FK to `Faculties.faculty` (by name) |
 | `venue` | string | yes | Denormalised venue name (free text — may not match a `Venues` row) |
-| `status` | string | no | `'active'` or `'inactive'` (case-insensitive in source). Treat anything other than `'inactive'` as active. |
+| `status` | boolean (0/1) | no | Active flag. Beacon writes `1` for active groups and `0` for inactive. |
 | `info` | string | yes | Public description of the group |
 | `meets_when` | string | yes | Free-text frequency (e.g. "1st Tuesday of month") |
 | `start_time` | time `HH:MM` | yes | |

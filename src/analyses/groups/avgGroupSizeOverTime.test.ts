@@ -7,9 +7,9 @@ describe('avgGroupSizeOverTime', () => {
     const result = avgGroupSizeOverTime.run([
       fakeSnapshot('2024-04-01', {
         groups: [
-          fakeGroup('A', 'Active'),
-          fakeGroup('B', 'Active'),
-          fakeGroup('C', 'Closed'),
+          fakeGroup('A', true),
+          fakeGroup('B', true),
+          fakeGroup('C', false),
         ],
         groupMembers: [
           fakeGroupMember('A', 1),
@@ -22,7 +22,7 @@ describe('avgGroupSizeOverTime', () => {
         ],
       }),
       fakeSnapshot('2025-04-01', {
-        groups: [fakeGroup('A', 'Active')],
+        groups: [fakeGroup('A', true)],
         groupMembers: [
           fakeGroupMember('A', 1),
           fakeGroupMember('A', 2),
@@ -41,7 +41,7 @@ describe('avgGroupSizeOverTime', () => {
   it('returns 0 when there are no active groups', () => {
     const result = avgGroupSizeOverTime.run([
       fakeSnapshot('2024-04-01', {
-        groups: [fakeGroup('A', 'Closed')],
+        groups: [fakeGroup('A', false)],
         groupMembers: [fakeGroupMember('A', 1)],
       }),
     ]);
