@@ -58,8 +58,18 @@ function renderReleases(release) {
   container.innerHTML = '';
 
   const assets = release.assets || [];
-  const windows = assets.find(a => a.name.includes('.exe'));
-  const macos = assets.filter(a => a.name.includes('.dmg') || a.name.endsWith('.zip'));
+  const windows = assets.find(a => a.name.endsWith('.exe'));
+  const macos = assets
+    .filter(a => a.name.endsWith('.dmg') || a.name.endsWith('-mac.zip'))
+    .sort((a, b) => {
+      const isDmgA = a.name.endsWith('.dmg');
+      const isDmgB = b.name.endsWith('.dmg');
+      if (isDmgA !== isDmgB) return isDmgA ? -1 : 1;
+      const isArmA = a.name.includes('arm64');
+      const isArmB = b.name.includes('arm64');
+      if (isArmA !== isArmB) return isArmA ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
 
   if (windows) {
     container.appendChild(createReleaseCard(
@@ -70,16 +80,17 @@ function renderReleases(release) {
     ));
   }
 
-  if (macos.length > 0) {
-    macos.forEach(asset => {
-      container.appendChild(createReleaseCard(
-        asset.name.includes('.dmg') ? 'macOS (Installer)' : 'macOS (Portable)',
-        asset.name,
-        asset.browser_download_url,
-        'macos'
-      ));
-    });
-  }
+  macos.forEach(asset => {
+    const isDmg = asset.name.endsWith('.dmg');
+    const arch = asset.name.includes('arm64') ? 'Apple Silicon' : 'Intel';
+    const label = `macOS ${arch} (${isDmg ? 'Installer' : 'Portable'})`;
+    container.appendChild(createReleaseCard(
+      label,
+      asset.name,
+      asset.browser_download_url,
+      'macos'
+    ));
+  });
 
   if (!windows && macos.length === 0) {
     container.innerHTML = `
