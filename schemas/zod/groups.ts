@@ -13,7 +13,7 @@ export const groupRow = z.object({
   group_name: zString,
   faculty: zStringNullable,
   venue: zStringNullable,
-  status: zString,
+  status: zBool,
   info: zStringNullable,
   meets_when: zStringNullable,
   start_time: zTimeNullable,

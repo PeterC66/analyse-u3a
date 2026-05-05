@@ -6,6 +6,7 @@ import { membershipOverTime } from './membership/membershipOverTime.js';
 import { joinersLeavers } from './churn/joinersLeavers.js';
 import { activeGroupsOverTime } from './groups/activeGroupsOverTime.js';
 import { avgGroupSizeOverTime } from './groups/avgGroupSizeOverTime.js';
+import { groupSizes } from './groups/groupSizes.js';
 
 export const CATEGORIES: AnalysisCategory[] = [
   {
@@ -42,6 +43,7 @@ export const ANALYSES: AnalysisDefinition[] = [
   contactCoverage,
   membershipOverTime,
   joinersLeavers,
+  groupSizes,
   activeGroupsOverTime,
   avgGroupSizeOverTime,
 ];

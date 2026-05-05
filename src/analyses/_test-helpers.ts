@@ -45,7 +45,7 @@ export function fakeMember(mkey: string, status: string): MemberRow {
   };
 }
 
-export function fakeGroup(gkey: string, status: string): GroupRow {
+export function fakeGroup(gkey: string, status: boolean): GroupRow {
   return {
     gkey,
     group_name: `Group ${gkey}`,
