@@ -1,0 +1,141 @@
+.panel {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.headerText {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.u3a {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #666;
+  word-break: break-word;
+}
+
+.clearButton {
+  padding: 6px 12px;
+  background: #f0f0f0;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.clearButton:hover {
+  background: #e0e0e0;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fafafa;
+  border-radius: 6px;
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.rowDate {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.rowFilename {
+  font-size: 12px;
+  color: #888;
+  font-family: monospace;
+  margin-top: 2px;
+  word-break: break-all;
+}
+
+.rowMeta {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: #666;
+}
+
+.clean {
+  color: #2a8a3a;
+}
+
+.errorsButton {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #b85c00;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.errorsButton:hover {
+  color: #8a4500;
+}
+
+.removeButton {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  color: #888;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.removeButton:hover {
+  background: #fee;
+  color: #c33;
+  border-color: #c33;
+}
+
+.add {
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}

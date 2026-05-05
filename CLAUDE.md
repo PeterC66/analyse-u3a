@@ -297,14 +297,17 @@ non-negotiable defaults.
 `src/App.tsx` holds a small state machine:
 
 ```
-idle ──▶ loading ──▶ (date-prompt if filename doesn't match)
+idle ──▶ loading ──▶ (date-prompt   if filename has no YYYYMMDDHHMM_ prefix)
+                  ──▶ (u3a-prompt   if filename u3a tag mismatches loaded set)
                   ──▶ loaded
                   ──▶ error
 ```
 
 File specification is **browser-only**. The user picks the file via
 drag-and-drop or `<input type="file">`. We never see a path string —
-only a `File` object. Filename is the source of the date/time stamp.
+only a `File` object. Filename is the source of the date/time stamp **and**
+the u3a name (the trailing ` u3abackup` sentinel — see *Multi-snapshot
+support* below).
 
 Inside `loaded`, a separate `view` discriminated union drives in-app
 navigation between the analysis screens:
@@ -338,9 +341,29 @@ React component. The detail page (`AnalysisPage`) is generic — given an
 uniformly. Adding an analysis is therefore: one new file + one entry in the
 registry. No UI changes.
 
-`run` takes `Snapshot[]` (not a single `Snapshot`) so multi-file mode drops
-in without changing analysis signatures. For now exactly one snapshot is
-passed.
+`run` takes `Snapshot[]`. The `snapshots` field on `AnalysisDefinition`
+declares which snapshots get passed:
+
+- **`'latest'`** (default) — only the most recent snapshot. Single-snapshot
+  analyses keep using `snapshots[0]` exactly as before.
+- **`'all'`** — every loaded snapshot, sorted oldest → newest. For
+  time-series / trend analyses (e.g. *Total membership over time*).
+- **`'pairs'`** — every loaded snapshot, but the analysis is expected to
+  walk consecutive pairs itself. Reserved for joiners/leavers diff
+  analyses; no concrete `pairs` analysis ships yet.
+
+Analyses with `snapshots: 'all'` or `'pairs'` need ≥ 2 snapshots —
+`AnalysisPage` shows an empty state ("Load another backup to see it") if
+fewer are loaded, and `CategoryPage` shows a *needs ≥ 2 backups* badge.
+
+**Cumulative-vs-point-in-time gotcha (read this before writing a new
+analysis).** Beacon's `Ledger`, `Detail`, `Group Ledgers`, and `Calendar`
+sheets are *cumulative* — every backup contains the full history.
+**Always read these from the latest snapshot only**; never aggregate them
+across snapshots, or you will double-count income / events. Only
+point-in-time sheets (`Members`, `Group members`, `Groups`,
+`Membership Classes`, `Venues`, etc.) are worth comparing across
+snapshots.
 
 The five categories in `CATEGORIES` are fixed UI cards. Don't add a sixth
 category lightly — front-page card real estate is the user's primary
@@ -360,14 +383,41 @@ analysis. Analyses that need the wider population must set
 shows "All members" instead of "Current members only" — the user
 should never have to guess which population a chart represents.
 
-### Snapshot type — designed for multi-file mode
+### Snapshot type and multi-snapshot support
 
-`src/state/types.ts` defines `Snapshot` (a `BeaconBackup` plus its
-filename/date/time metadata). Even though we're single-file now, **never
-hard-code "the current backup" anywhere**. Anything that operates on loaded
-data should accept a `Snapshot` (or `Snapshot[]` once multi-file lands).
-Multi-file mode = historical snapshots of the *same* u3a, used for trend
-analysis across years.
+`src/state/types.ts` defines `Snapshot` — a `BeaconBackup` plus its
+`filename`, `date`, `time`, `u3aName`, and the `errors[]` collected while
+parsing it. Per-snapshot errors live with the snapshot so removing a
+snapshot also drops its errors; there's no app-level "current errors"
+state to keep in sync.
+
+App state holds `Snapshot[]`, sorted ascending by `(date, time)`. A user
+loads files one at a time; each `addSnapshot` step:
+
+1. Parses the filename via `parseBackupFilename`, which returns
+   `{ date, time, u3aName }`. The u3a name is only extracted when the
+   trailing ` u3abackup` sentinel is present (see *Filename → date
+   contract* below); otherwise it's `null`.
+2. Compares the new file's `u3aName` (case-insensitively, trimmed)
+   against the canonical name from the loaded set (`canonicalU3aName` —
+   first non-null `u3aName` in the list).
+3. If the names match, loads directly. If they differ (or either is
+   null), shows `ConfirmU3aPrompt` — a confirm-dialog override, not a
+   hard block, because a treasurer may legitimately have renamed a file.
+   Cancelling returns to the previous state with the loaded set
+   unchanged.
+4. Dedupes by `(date, time)`: re-loading the same backup, or a corrected
+   copy with the same instant, replaces the existing snapshot rather
+   than producing duplicates.
+
+`SnapshotList` (in `src/components/`) renders the list; it owns the
+"add another" dropzone (re-using `FileDropzone`) and the per-snapshot
+remove button. `SummaryPanel` always shows the *latest* snapshot's
+counts (so existing single-snapshot mental models stay intact).
+
+**Privacy:** the snapshot list is in-memory only. Never persist any
+`Snapshot` (or its `BeaconBackup`) to `localStorage`, `sessionStorage`,
+disk, or anywhere else.
 
 ### Validation strategy — hybrid
 
@@ -381,14 +431,23 @@ analysis across years.
   modal surfaces the skipped rows to the user. Analyses run on valid
   rows only.
 
-### Filename → date contract
+### Filename → date / u3a contract
 
-- Pattern: `^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})_` — captures both date
-  *and* time so two backups taken on the same day are distinguishable
-  (important for multi-file mode).
+- Date/time pattern: `^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})_` — captures
+  both date *and* time so two backups taken on the same day are
+  distinguishable (important for multi-file mode and the dedupe rule).
 - Non-conforming filenames trigger `ManualDatePrompt`. We **never silently
   fall back** to today's date or file mtime — the user must always be aware
   of what date is being attributed to the snapshot.
+- u3a name: extracted from the segment between the date prefix and a
+  trailing ` u3abackup` (or `_u3abackup`) sentinel, case-insensitive,
+  trimmed. Beacon's exporter writes filenames like
+  `202603170140_St Ives Cambridge Demo24 u3abackup.xlsx`, so this
+  identifies the source u3a reliably for unrenamed files. If the
+  sentinel is absent, `parseBackupFilename` returns `u3aName: null`
+  rather than guessing — the same-u3a check then falls back to the
+  user-confirm dialog described in *Snapshot type and multi-snapshot
+  support*.
 
 ### Privacy invariants (do not violate)
 

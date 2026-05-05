@@ -3,11 +3,17 @@ import styles from './CategoryPage.module.css';
 
 interface Props {
   categoryId: string;
+  snapshotCount: number;
   onBack: () => void;
   onSelectAnalysis: (analysisId: string) => void;
 }
 
-export default function CategoryPage({ categoryId, onBack, onSelectAnalysis }: Props) {
+export default function CategoryPage({
+  categoryId,
+  snapshotCount,
+  onBack,
+  onSelectAnalysis,
+}: Props) {
   const category = getCategory(categoryId);
   const analyses = analysesForCategory(categoryId);
 
@@ -36,17 +42,34 @@ export default function CategoryPage({ categoryId, onBack, onSelectAnalysis }: P
         </div>
       ) : (
         <ul className={styles.list}>
-          {analyses.map((a) => (
-            <li key={a.id}>
-              <button
-                className={styles.item}
-                onClick={() => onSelectAnalysis(a.id)}
-              >
-                <span className={styles.itemTitle}>{a.title}</span>
-                <span className={styles.itemDescription}>{a.description}</span>
-              </button>
-            </li>
-          ))}
+          {analyses.map((a) => {
+            const mode = a.snapshots ?? 'latest';
+            const locked = mode !== 'latest' && snapshotCount < 2;
+            return (
+              <li key={a.id}>
+                <button
+                  className={styles.item}
+                  onClick={() => onSelectAnalysis(a.id)}
+                >
+                  <span className={styles.itemTitle}>
+                    {a.title}
+                    {mode === 'all' && (
+                      <span className={styles.badge}>trend</span>
+                    )}
+                    {mode === 'pairs' && (
+                      <span className={styles.badge}>comparison</span>
+                    )}
+                    {locked && (
+                      <span className={styles.badgeLocked}>
+                        needs ≥ 2 backups
+                      </span>
+                    )}
+                  </span>
+                  <span className={styles.itemDescription}>{a.description}</span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

@@ -2,6 +2,7 @@ import type { AnalysisCategory, AnalysisDefinition } from './types.js';
 import { countByClass } from './membership/countByClass.js';
 import { tenureDistribution } from './membership/tenureDistribution.js';
 import { contactCoverage } from './membership/contactCoverage.js';
+import { membershipOverTime } from './membership/membershipOverTime.js';
 
 export const CATEGORIES: AnalysisCategory[] = [
   {
@@ -36,6 +37,7 @@ export const ANALYSES: AnalysisDefinition[] = [
   countByClass,
   tenureDistribution,
   contactCoverage,
+  membershipOverTime,
 ];
 
 export function getCategory(id: string): AnalysisCategory | undefined {

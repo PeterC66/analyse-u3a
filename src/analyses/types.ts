@@ -50,6 +50,22 @@ export interface AnalysisDefinition {
    * (e.g. churn, lifetime-history reports).
    */
   scope?: 'current' | 'all';
-  /** Always called with at least one snapshot. Multi-snapshot mode passes more. */
+  /**
+   * Snapshot-set the analysis consumes.
+   * - 'latest' (default): receives only the most recent snapshot — every
+   *   single-snapshot analysis stays this shape.
+   * - 'all': receives every loaded snapshot, sorted oldest → newest. For
+   *   time-series analyses.
+   * - 'pairs': also receives every loaded snapshot. Reserved for
+   *   consecutive-snapshot diff analyses (joiners/leavers); the analysis
+   *   walks pairs itself.
+   *
+   * NOTE: cumulative sheets (Ledger, Detail, Group Ledgers, Calendar)
+   * already contain full history in *every* backup — read them from the
+   * latest snapshot only. Do not aggregate them across snapshots or you
+   * will double-count.
+   */
+  snapshots?: 'latest' | 'all' | 'pairs';
+  /** Always called with at least one snapshot. */
   run: (snapshots: Snapshot[]) => AnalysisResult;
 }
