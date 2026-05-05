@@ -10,6 +10,7 @@
     "dev:electron": "vite && electron .",
     "build": "tsc --noEmit && vite build && tsc -p electron/tsconfig.json",
     "build:electron": "npm run build && electron-builder",
+    "build:web": "tsc --noEmit && vite build --mode web",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit && tsc -p electron/tsconfig.json --noEmit",
     "test": "vitest run",

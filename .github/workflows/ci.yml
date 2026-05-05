@@ -32,6 +32,9 @@ jobs:
       - name: Build (web bundle + electron main)
         run: npm run build
 
+      - name: Build hosted web app
+        run: npm run build:web
+
   cross-platform-build:
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
