@@ -3,6 +3,9 @@ import { countByClass } from './membership/countByClass.js';
 import { tenureDistribution } from './membership/tenureDistribution.js';
 import { contactCoverage } from './membership/contactCoverage.js';
 import { membershipOverTime } from './membership/membershipOverTime.js';
+import { joinersLeavers } from './churn/joinersLeavers.js';
+import { activeGroupsOverTime } from './groups/activeGroupsOverTime.js';
+import { avgGroupSizeOverTime } from './groups/avgGroupSizeOverTime.js';
 
 export const CATEGORIES: AnalysisCategory[] = [
   {
@@ -38,6 +41,9 @@ export const ANALYSES: AnalysisDefinition[] = [
   tenureDistribution,
   contactCoverage,
   membershipOverTime,
+  joinersLeavers,
+  activeGroupsOverTime,
+  avgGroupSizeOverTime,
 ];
 
 export function getCategory(id: string): AnalysisCategory | undefined {
