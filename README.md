@@ -158,6 +158,26 @@ The Beacon backup **does not include**:
 
 The UI surfaces these limitations rather than producing misleading charts.
 
+## Group Exclusions
+
+Some entries in a u3a's Beacon `Groups` sheet aren't real interest groups
+— they're outings, theatre trips, ad-hoc events, or proposed groups that
+haven't started yet. u3as that do tag them typically use a name prefix
+like `Outing`, `Theatres`, `Events`, or `POSS`, but **the vocabulary
+varies per u3a** and many u3as don't tag them at all.
+
+The analysis menu page has a collapsible **Group exclusions** panel
+where you can list prefixes (case-insensitive, comma- or newline-
+separated) to exclude from group reporting. Matching groups are hidden
+from every group analysis (e.g. *Group sizes*, *Active groups over
+time*). The panel shows a live preview of which entries would be
+excluded so you can sanity-check the list.
+
+The list is **per u3a, persisted in `localStorage`** keyed by the u3a
+name parsed from the filename. It contains only your prefix strings —
+no member data — and never leaves your machine. Loading a backup from
+a different u3a starts with an empty list.
+
 ## Renewal Payment Configuration
 
 Beacon does not have an explicit "renewal" flag. Renewal income is identified by **transaction category**:
@@ -203,11 +223,16 @@ analyse-u3a/
 │   │   ├── DownloadBar.*        — CSV / XLSX / SVG download buttons
 │   │   └── ValidationDetails.*  — modal listing skipped rows
 │   ├── analyses/
-│   │   ├── types.ts             — AnalysisDefinition, ChartConfig, Column
+│   │   ├── types.ts             — AnalysisDefinition, AnalysisOptions, ChartConfig, Column
 │   │   ├── registry.ts          — CATEGORIES + ANALYSES arrays + lookup helpers
+│   │   ├── members.ts           — currentMembers / isCurrentMember helpers
+│   │   ├── groups.ts            — realGroups / isRealGroup helpers (per-u3a prefix exclusions)
 │   │   └── <category>/<id>.ts   — one file per analysis (e.g. membership/countByClass.ts)
+│   ├── components/
+│   │   └── GroupExclusionSettings.* — collapsible panel on the menu page for editing the prefix list
 │   └── state/
-│       └── types.ts         — Snapshot type (designed for future multi-file mode)
+│       ├── types.ts         — Snapshot type (multi-file mode)
+│       └── preferences.ts   — per-u3a, localStorage-backed settings (excluded group prefixes)
 ├── .github/workflows/
 │   ├── ci.yml               — GitHub Actions: typecheck + tests + cross-OS build on PRs
 │   └── release.yml          — GitHub Actions: build & publish installers (tag push)
@@ -250,9 +275,13 @@ CSV / XLSX / SVG download buttons. Adding a new analysis is two small steps:
      title: 'Joiners by Year',
      description: 'New member joins per calendar year.',
      // snapshots: 'latest' (default), 'all' (time-series), or 'pairs'
-     run: (snapshots) => {
+     run: (snapshots, options) => {
        const snap = snapshots[0];
        // ...derive { columns, rows } from snap.backup
+       // `options.excludedGroupPrefixes` is the user's "exclude these
+       // group-name prefixes from group reporting" list — group analyses
+       // should pipe it through `realGroups(...)`; non-group analyses
+       // can ignore it.
        return {
          columns: [
            { key: 'year',  label: 'Year' },

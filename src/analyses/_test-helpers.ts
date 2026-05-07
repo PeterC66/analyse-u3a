@@ -4,6 +4,11 @@ import type {
   GroupRow,
   GroupMemberRow,
 } from '../../schemas/zod/index.js';
+import type { AnalysisOptions } from './types.js';
+
+export const defaultOptions: AnalysisOptions = {
+  excludedGroupPrefixes: [],
+};
 
 export function fakeMember(mkey: string, status: string): MemberRow {
   return {

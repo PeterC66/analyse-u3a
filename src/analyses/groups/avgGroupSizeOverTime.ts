@@ -1,4 +1,5 @@
 import type { AnalysisDefinition } from '../types.js';
+import { realGroups } from '../groups.js';
 
 export const avgGroupSizeOverTime: AnalysisDefinition = {
   id: 'groups-avg-size-over-time',
@@ -8,10 +9,12 @@ export const avgGroupSizeOverTime: AnalysisDefinition = {
     'Mean roster size across active groups at each loaded snapshot — needs at least 2 backups loaded.',
   scope: 'all',
   snapshots: 'all',
-  run: (snapshots) => {
+  run: (snapshots, options) => {
     const rows = snapshots.map((s) => {
       const activeGkeys = new Set(
-        s.backup.groups.filter((g) => g.status).map((g) => g.gkey),
+        realGroups(s.backup.groups, options.excludedGroupPrefixes)
+          .filter((g) => g.status)
+          .map((g) => g.gkey),
       );
 
       const sizesByGkey = new Map<string, number>();

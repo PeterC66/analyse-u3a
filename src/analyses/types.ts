@@ -38,6 +38,17 @@ export interface AnalysisCategory {
   notes?: string;
 }
 
+/**
+ * Per-run options threaded from `App.tsx` into every analysis. Carries
+ * user preferences that aren't part of the parsed Beacon data — currently
+ * just the prefix list used to exclude non-real "groups" (outings,
+ * theatre trips, proposed groups). Group analyses honour it via the
+ * `realGroups` helper; non-group analyses ignore it.
+ */
+export interface AnalysisOptions {
+  excludedGroupPrefixes: string[];
+}
+
 export interface AnalysisDefinition {
   id: string;
   categoryId: string;
@@ -67,5 +78,5 @@ export interface AnalysisDefinition {
    */
   snapshots?: 'latest' | 'all' | 'pairs';
   /** Always called with at least one snapshot. */
-  run: (snapshots: Snapshot[]) => AnalysisResult;
+  run: (snapshots: Snapshot[], options: AnalysisOptions) => AnalysisResult;
 }

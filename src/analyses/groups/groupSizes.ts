@@ -1,4 +1,5 @@
 import type { AnalysisDefinition } from '../types.js';
+import { realGroups } from '../groups.js';
 
 export const groupSizes: AnalysisDefinition = {
   id: 'groups-sizes',
@@ -7,10 +8,13 @@ export const groupSizes: AnalysisDefinition = {
   description:
     'Roster size of each active group in the latest backup, ordered largest first.',
   scope: 'all',
-  run: (snapshots) => {
+  run: (snapshots, options) => {
     const snap = snapshots[0];
 
-    const activeGroups = snap.backup.groups.filter((g) => g.status);
+    const activeGroups = realGroups(
+      snap.backup.groups,
+      options.excludedGroupPrefixes,
+    ).filter((g) => g.status);
     const nameByGkey = new Map(activeGroups.map((g) => [g.gkey, g.group_name]));
     const facultyByGkey = new Map(
       activeGroups.map((g) => [g.gkey, g.faculty ?? '']),

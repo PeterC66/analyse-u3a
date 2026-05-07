@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { joinersLeavers } from './joinersLeavers.js';
-import { fakeMember, fakeSnapshot } from '../_test-helpers.js';
+import { defaultOptions, fakeMember, fakeSnapshot } from '../_test-helpers.js';
 
 describe('joinersLeavers', () => {
   it('counts members who became / stopped being current between consecutive snapshots', () => {
@@ -31,16 +31,17 @@ describe('joinersLeavers', () => {
       }),
     ];
 
-    expect(joinersLeavers.run(snaps).rows).toEqual([
+    expect(joinersLeavers.run(snaps, defaultOptions).rows).toEqual([
       { from: '2024-04-01', to: '2025-04-01', joiners: 1, leavers: 1, net: 0 },
       { from: '2025-04-01', to: '2026-04-01', joiners: 2, leavers: 0, net: 2 },
     ]);
   });
 
   it('returns no rows for a single snapshot (pairs need at least 2)', () => {
-    const result = joinersLeavers.run([
-      fakeSnapshot('2025-04-01', { members: [fakeMember('1', 'Current')] }),
-    ]);
+    const result = joinersLeavers.run(
+      [fakeSnapshot('2025-04-01', { members: [fakeMember('1', 'Current')] })],
+      defaultOptions,
+    );
     expect(result.rows).toEqual([]);
   });
 

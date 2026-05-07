@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { Snapshot } from '../../state/types.js';
 import type { MemberRow } from '../../../schemas/zod/index.js';
 import { membershipOverTime } from './membershipOverTime.js';
+import { defaultOptions } from '../_test-helpers.js';
 
 function member(mkey: string, status: string): MemberRow {
   return {
@@ -71,7 +72,7 @@ describe('membershipOverTime', () => {
       ]),
     ];
 
-    const result = membershipOverTime.run(snaps);
+    const result = membershipOverTime.run(snaps, defaultOptions);
 
     expect(result.rows).toEqual([
       { date: '2024-04-01', members: 2 },
@@ -87,13 +88,16 @@ describe('membershipOverTime', () => {
   });
 
   it('treats Honorary members as current and is case-insensitive on status', () => {
-    const result = membershipOverTime.run([
-      snapshot('2025-04-01', [
-        member('1', 'CURRENT'),
-        member('2', 'honorary'),
-        member('3', 'lapsed'),
-      ]),
-    ]);
+    const result = membershipOverTime.run(
+      [
+        snapshot('2025-04-01', [
+          member('1', 'CURRENT'),
+          member('2', 'honorary'),
+          member('3', 'lapsed'),
+        ]),
+      ],
+      defaultOptions,
+    );
     expect(result.rows).toEqual([{ date: '2025-04-01', members: 2 }]);
   });
 
