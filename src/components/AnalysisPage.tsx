@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { getAnalysis, getCategory } from '../analyses/registry.js';
+import type { AnalysisOptions } from '../analyses/types.js';
 import type { Snapshot } from '../state/types.js';
 import { formatBackupDateTime } from '../ingest/parseFilename.js';
 import AnalysisChart from './AnalysisChart.js';
@@ -10,10 +11,11 @@ import styles from './AnalysisPage.module.css';
 interface Props {
   analysisId: string;
   snapshots: Snapshot[];
+  options: AnalysisOptions;
   onBack: () => void;
 }
 
-export default function AnalysisPage({ analysisId, snapshots, onBack }: Props) {
+export default function AnalysisPage({ analysisId, snapshots, options, onBack }: Props) {
   const analysis = getAnalysis(analysisId);
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -26,8 +28,11 @@ export default function AnalysisPage({ analysisId, snapshots, onBack }: Props) {
   const needsMultiple = mode !== 'latest' && snapshots.length < 2;
 
   const result = useMemo(
-    () => (analysis && !needsMultiple && input.length > 0 ? analysis.run(input) : null),
-    [analysis, input, needsMultiple],
+    () =>
+      analysis && !needsMultiple && input.length > 0
+        ? analysis.run(input, options)
+        : null,
+    [analysis, input, needsMultiple, options],
   );
 
   if (!analysis) {

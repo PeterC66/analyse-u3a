@@ -1,4 +1,5 @@
 import type { AnalysisDefinition } from '../types.js';
+import { realGroups } from '../groups.js';
 
 export const activeGroupsOverTime: AnalysisDefinition = {
   id: 'groups-active-over-time',
@@ -8,10 +9,12 @@ export const activeGroupsOverTime: AnalysisDefinition = {
     'Number of groups with status "Active" at each loaded snapshot — needs at least 2 backups loaded.',
   scope: 'all',
   snapshots: 'all',
-  run: (snapshots) => {
+  run: (snapshots, options) => {
     const rows = snapshots.map((s) => ({
       date: s.date,
-      groups: s.backup.groups.filter((g) => g.status).length,
+      groups: realGroups(s.backup.groups, options.excludedGroupPrefixes).filter(
+        (g) => g.status,
+      ).length,
     }));
 
     return {

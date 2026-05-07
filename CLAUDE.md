@@ -397,13 +397,13 @@ All analyses live in `src/analyses/`:
 
 The shape is deliberately a **plain-object registry**, not a per-analysis
 React component. The detail page (`AnalysisPage`) is generic — given an
-`AnalysisDefinition.run(snapshots)` result it renders the chart
+`AnalysisDefinition.run(snapshots, options)` result it renders the chart
 (`AnalysisChart`), table (`DataTable`), and download buttons (`DownloadBar`)
 uniformly. Adding an analysis is therefore: one new file + one entry in the
 registry. No UI changes.
 
-`run` takes `Snapshot[]`. The `snapshots` field on `AnalysisDefinition`
-declares which snapshots get passed:
+`run` takes `(snapshots: Snapshot[], options: AnalysisOptions)`. The
+`snapshots` field on `AnalysisDefinition` declares which snapshots get passed:
 
 - **`'latest'`** (default) — only the most recent snapshot. Single-snapshot
   analyses keep using `snapshots[0]` exactly as before.
@@ -430,6 +430,17 @@ The five categories in `CATEGORIES` are fixed UI cards. Don't add a sixth
 category lightly — front-page card real estate is the user's primary
 mental model. New work should usually mean a new analysis under an
 existing category, not a new category.
+
+**`AnalysisOptions` — user preferences threaded into every `run`.**
+Currently just `excludedGroupPrefixes: string[]` — the user-edited
+list of group-name prefixes (case-insensitive) to exclude from group
+reporting. Group analyses must funnel `snap.backup.groups` through
+`realGroups(groups, options.excludedGroupPrefixes)` from
+`src/analyses/groups.ts` (mirrors the `currentMembers` helper);
+non-group analyses may ignore the second argument. App.tsx persists
+the list per-u3a in `localStorage` via `src/state/preferences.ts`
+(key `analyse-u3a:prefs:v1`) — this is non-PII config, allowed under
+the privacy invariants below.
 
 **Default member scope: current members only.** Beacon's locked,
 default-shipped statuses are `Current`, `Lapsed`, `Resigned`,
@@ -525,7 +536,10 @@ disk, or anywhere else.
   `connect-src 'none'`, so the browser refuses any outbound request.
 - **No `localStorage` / `sessionStorage` for member data.** In-memory only
   while the file is loaded. Only non-PII config (e.g. user's chosen
-  renewal-category list) may be persisted.
+  renewal-category list, group-exclusion prefixes) may be persisted.
+  The only key written today is `analyse-u3a:prefs:v1` (excluded group
+  prefixes per u3a) — see `src/state/preferences.ts`. New keys must be
+  audited to confirm they hold no member data.
 - **Hosted web build is provably local-only.** Served as static files
   from GitHub Pages with a strict CSP that blocks all outbound network
   traffic. A user can verify this in browser dev-tools (Network tab

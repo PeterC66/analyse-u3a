@@ -1,15 +1,20 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import FileDropzone from './components/FileDropzone.js';
 import ManualDatePrompt from './components/ManualDatePrompt.js';
 import ConfirmU3aPrompt from './components/ConfirmU3aPrompt.js';
 import SnapshotList from './components/SnapshotList.js';
 import SummaryPanel from './components/SummaryPanel.js';
+import GroupExclusionSettings from './components/GroupExclusionSettings.js';
 import AnalysisMenu from './components/AnalysisMenu.js';
 import CategoryPage from './components/CategoryPage.js';
 import AnalysisPage from './components/AnalysisPage.js';
 import { parseBackupFilename } from './ingest/parseFilename.js';
 import { loadBackup } from './ingest/loadBackup.js';
 import { getAnalysis } from './analyses/registry.js';
+import {
+  loadExcludedPrefixes,
+  saveExcludedPrefixes,
+} from './state/preferences.js';
 import type { Snapshot } from './state/types.js';
 import releaseMessage from '../docs/message.json' with { type: 'json' };
 import styles from './App.module.css';
@@ -51,6 +56,13 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [view, setView] = useState<View>({ kind: 'menu' });
   const [pending, setPending] = useState<PendingLoad | null>(null);
+  const [excludedPrefixes, setExcludedPrefixes] = useState<string[]>([]);
+  const [prefsLoadedFor, setPrefsLoadedFor] = useState<string | null>(null);
+
+  const analysisOptions = useMemo(
+    () => ({ excludedGroupPrefixes: excludedPrefixes }),
+    [excludedPrefixes],
+  );
 
   const handleFileSelected = async (file: File) => {
     setErrorMessage(null);
@@ -119,6 +131,14 @@ export default function App() {
     setPending(null);
     setView({ kind: 'menu' });
     setState('idle');
+    setExcludedPrefixes([]);
+    setPrefsLoadedFor(null);
+  };
+
+  const handleExcludedPrefixesChange = (prefixes: string[]) => {
+    setExcludedPrefixes(prefixes);
+    const canonical = canonicalU3aName(snapshots);
+    saveExcludedPrefixes(canonical, prefixes);
   };
 
   const handleRemoveSnapshot = (filename: string) => {
@@ -150,12 +170,19 @@ export default function App() {
         u3aName,
         errors,
       };
-      setSnapshots((prev) => {
-        const filtered = prev.filter(
-          (s) => !(s.date === snap.date && s.time === snap.time),
-        );
-        return [...filtered, snap].sort(compareSnapshots);
-      });
+      const filtered = snapshots.filter(
+        (s) => !(s.date === snap.date && s.time === snap.time),
+      );
+      const next = [...filtered, snap].sort(compareSnapshots);
+      setSnapshots(next);
+
+      const canonical = canonicalU3aName(next);
+      const key = canonical ?? '__unknown__';
+      if (key !== prefsLoadedFor) {
+        setExcludedPrefixes(loadExcludedPrefixes(canonical));
+        setPrefsLoadedFor(key);
+      }
+
       setView({ kind: 'menu' });
       setState('loaded');
     } catch (err) {
@@ -223,6 +250,11 @@ export default function App() {
                   onClearAll={handleClearAll}
                 />
                 <SummaryPanel snapshot={latestSnapshot} />
+                <GroupExclusionSettings
+                  groups={latestSnapshot.backup.groups}
+                  prefixes={excludedPrefixes}
+                  onChange={handleExcludedPrefixesChange}
+                />
                 <AnalysisMenu
                   onSelectCategory={(categoryId) => setView({ kind: 'category', categoryId })}
                 />
@@ -242,6 +274,7 @@ export default function App() {
               <AnalysisPage
                 analysisId={view.analysisId}
                 snapshots={snapshots}
+                options={analysisOptions}
                 onBack={() => {
                   const parent = getAnalysis(view.analysisId)?.categoryId;
                   setView(parent ? { kind: 'category', categoryId: parent } : { kind: 'menu' });
