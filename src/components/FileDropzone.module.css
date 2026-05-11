@@ -35,12 +35,19 @@
   color: #666;
 }
 
-.button {
-  padding: 10px 24px;
+.buttons {
+  display: inline-flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.button,
+.buttonSecondary {
+  padding: 10px 20px;
   font-size: 14px;
   font-weight: 500;
-  background: #0066cc;
-  color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -48,11 +55,27 @@
   transition: background 0.2s;
 }
 
+.button {
+  background: #0066cc;
+  color: white;
+}
+
 .button:hover:not(:disabled) {
   background: #0052a3;
 }
 
-.button:disabled {
+.buttonSecondary {
+  background: #fff;
+  color: #0066cc;
+  border: 1px solid #0066cc;
+}
+
+.buttonSecondary:hover:not(:disabled) {
+  background: #e6f2ff;
+}
+
+.button:disabled,
+.buttonSecondary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

@@ -455,6 +455,51 @@ analysis. Analyses that need the wider population must set
 shows "All members" instead of "Current members only" — the user
 should never have to guess which population a chart represents.
 
+### Bulk loading (multi-file and folder)
+
+Users can load **many backups at once** via the dropzone — multiple files
+picked with `Choose file(s)…`, a folder picked with `Choose folder…`
+(recursive), or a multi-file / folder drag-and-drop. The dropzone
+filters everything down to `* u3abackup.xlsx` filenames via
+`isBackupFilename` before handing the list to App; the rest of the
+folder is silently ignored. Folder drag-drop uses
+`DataTransferItem.webkitGetAsEntry` (see
+`src/ingest/collectDroppedFiles.ts`).
+
+`handleFilesSelected` routes by count:
+
+- **1 file** → existing single-file flow (`ManualDatePrompt` /
+  `ConfirmU3aPrompt`, full prompts).
+- **≥ 2 files** → bulk flow.
+
+Bulk flow rules (locked in — don't reverse without a UX decision):
+
+- **Sequential, with progress.** `runBulkLoad` (in
+  `src/ingest/bulkLoad.ts`) parses files one at a time and calls back
+  with `(current, total, currentFilename)` so `BulkLoadProgress` can
+  render a bar. Predictable memory; no `Promise.all`.
+- **Skip files with no date prefix.** Each file would need its own date,
+  so a single prompt can't cover them. They land in `skippedNoDate` and
+  appear in the end-of-load summary by name so the user can rename and
+  re-load individually.
+- **u3a-mismatch is a one-shot decision.** If any file's parsed
+  `u3aName` differs from the canonical loaded u3a (or, when starting
+  from empty, from the first parsed `u3aName` in the batch),
+  `BulkU3aPrompt` shows once with three choices: *Load all* (treat the
+  tag as advisory), *Skip mismatches* (default-safe), or *Cancel*.
+  Mismatches load with their parsed `u3aName` intact — we don't
+  overwrite it.
+- **Per-file failures are isolated.** I/O or structural errors on one
+  file are caught into `failed[]`; the rest of the queue continues.
+  Row-level Zod errors stay on the snapshot as before.
+- **Dedup by `(date, time)` still applies.** A loaded snapshot at the
+  same instant is replaced and the replaced filename is shown in the
+  summary.
+- **Summary is always shown.** `BulkLoadSummary` reports five buckets:
+  loaded, replaced, skipped-no-date, skipped-mismatch, failed. Don't
+  remove it — silent bulk loads are how users miss that half their
+  folder was filtered out.
+
 ### Snapshot type and multi-snapshot support
 
 `src/state/types.ts` defines `Snapshot` — a `BeaconBackup` plus its

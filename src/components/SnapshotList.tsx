@@ -7,14 +7,14 @@ import styles from './SnapshotList.module.css';
 
 interface Props {
   snapshots: Snapshot[];
-  onAddFile: (file: File) => void;
+  onFilesSelected: (files: File[]) => void;
   onRemove: (filename: string) => void;
   onClearAll: () => void;
 }
 
 export default function SnapshotList({
   snapshots,
-  onAddFile,
+  onFilesSelected,
   onRemove,
   onClearAll,
 }: Props) {
@@ -81,7 +81,7 @@ export default function SnapshotList({
       </ul>
 
       <div className={styles.add}>
-        <FileDropzone onFileSelected={onAddFile} />
+        <FileDropzone onFilesSelected={onFilesSelected} />
       </div>
 
       {errorsSnapshot && (

@@ -80,10 +80,14 @@ npm run dev
 
 This starts a Vite dev server bound to `127.0.0.1:5173`. Open it in your browser, then:
 
-1. Drag your Beacon backup (`.xlsx`) onto the page, or click **"Open File..."**
+1. Drag your Beacon backup (`.xlsx`) onto the page, or use the
+   **"Choose file(s)…"** / **"Choose folder…"** buttons. You can pick a
+   single file, multiple files, or a whole folder (recursive) of backups
+   in one go.
 2. The app extracts the backup date/time and u3a name from the filename
    (pattern: `YYYYMMDDHHMM_<u3a name> u3abackup.xlsx`). If the filename
-   doesn't match, you'll be prompted to enter the date manually.
+   doesn't match, you'll be prompted to enter the date manually (single
+   loads) or it will be skipped and reported (bulk loads).
 3. The file is validated against the schemas — structural problems halt the load;
    individual bad rows are reported and skipped.
 4. Once loaded, you'll see a snapshot list (drop more backups onto it to add
@@ -91,9 +95,13 @@ This starts a Vite dev server bound to `127.0.0.1:5173`. Open it in your browser
    cards. Click a card to open its list of analyses, then click an analysis
    to see its chart and table, with download buttons for CSV, XLSX, and SVG.
 5. **Multiple backups for the same u3a:** each new file is checked against
-   the u3a name in the filename. If it doesn't match the loaded set, you'll
-   be asked to confirm before it's added. Trend analyses (e.g. *Total
-   membership over time*) light up once two or more backups are loaded.
+   the u3a name in the filename. If it doesn't match the loaded set,
+   you'll be asked to confirm before it's added (or, for bulk loads, you
+   choose once for the whole batch — load all, skip mismatches, or
+   cancel). A bulk load shows a progress bar while it works and a
+   summary at the end listing what was loaded, replaced, skipped, or
+   failed. Trend analyses (e.g. *Total membership over time*) light up
+   once two or more backups are loaded.
 
 #### Building the Desktop App (Electron)
 
@@ -206,13 +214,19 @@ analyse-u3a/
 │   ├── main.tsx             — React entry
 │   ├── App.tsx              — top-level state machine + layout
 │   ├── ingest/
-│   │   ├── parseFilename.ts — YYYYMMDDHHMM_*.xlsx → date + time
-│   │   ├── sheetToObjects.ts— ExcelJS worksheet → array of plain objects
-│   │   └── loadBackup.ts    — orchestrator (structural + row-level validation)
+│   │   ├── parseFilename.ts     — YYYYMMDDHHMM_*.xlsx → date + time
+│   │   ├── isBackupFilename.ts  — predicate for the `* u3abackup.xlsx` sentinel (used to filter bulk picks)
+│   │   ├── collectDroppedFiles.ts— webkitGetAsEntry walker for folder drops
+│   │   ├── sheetToObjects.ts    — ExcelJS worksheet → array of plain objects
+│   │   ├── bulkLoad.ts          — partition + sequential bulk parser
+│   │   └── loadBackup.ts        — orchestrator (structural + row-level validation)
 │   ├── components/
-│   │   ├── FileDropzone.*       — drag-and-drop + file picker
+│   │   ├── FileDropzone.*       — drag-and-drop, file picker, folder picker (single or bulk)
 │   │   ├── ManualDatePrompt.*   — fallback when filename doesn't match pattern
 │   │   ├── ConfirmU3aPrompt.*   — same-u3a confirmation when filename u3a tag mismatches
+│   │   ├── BulkU3aPrompt.*      — bulk-load one-shot decision for u3a-tag mismatches
+│   │   ├── BulkLoadProgress.*   — progress bar shown during sequential bulk parsing
+│   │   ├── BulkLoadSummary.*    — end-of-bulk-load report (loaded / replaced / skipped / failed)
 │   │   ├── SnapshotList.*       — list of loaded backups + per-snapshot remove + add-another
 │   │   ├── SummaryPanel.*       — counts for the latest snapshot
 │   │   ├── AnalysisMenu.*       — front-page grid of analysis category cards
