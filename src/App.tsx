@@ -2,6 +2,11 @@ import { useMemo, useState } from 'react';
 import FileDropzone from './components/FileDropzone.js';
 import ManualDatePrompt from './components/ManualDatePrompt.js';
 import ConfirmU3aPrompt from './components/ConfirmU3aPrompt.js';
+import BulkLoadProgress from './components/BulkLoadProgress.js';
+import BulkU3aPrompt from './components/BulkU3aPrompt.js';
+import BulkLoadSummary, {
+  type BulkLoadResult,
+} from './components/BulkLoadSummary.js';
 import SnapshotList from './components/SnapshotList.js';
 import SummaryPanel from './components/SummaryPanel.js';
 import GroupExclusionSettings from './components/GroupExclusionSettings.js';
@@ -10,6 +15,11 @@ import CategoryPage from './components/CategoryPage.js';
 import AnalysisPage from './components/AnalysisPage.js';
 import { parseBackupFilename } from './ingest/parseFilename.js';
 import { loadBackup } from './ingest/loadBackup.js';
+import {
+  partitionByFilename,
+  runBulkLoad,
+  type ParsedBulkFile,
+} from './ingest/bulkLoad.js';
 import { getAnalysis } from './analyses/registry.js';
 import {
   loadExcludedPrefixes,
@@ -19,7 +29,16 @@ import type { Snapshot } from './state/types.js';
 import releaseMessage from '../docs/message.json' with { type: 'json' };
 import styles from './App.module.css';
 
-type State = 'idle' | 'loading' | 'date-prompt' | 'u3a-prompt' | 'loaded' | 'error';
+type State =
+  | 'idle'
+  | 'loading'
+  | 'date-prompt'
+  | 'u3a-prompt'
+  | 'bulk-u3a-prompt'
+  | 'bulk-loading'
+  | 'bulk-summary'
+  | 'loaded'
+  | 'error';
 type View =
   | { kind: 'menu' }
   | { kind: 'category'; categoryId: string }
@@ -30,6 +49,19 @@ interface PendingLoad {
   date: string;
   time: string;
   u3aName: string | null;
+}
+
+interface PendingBulk {
+  parsed: ParsedBulkFile[];
+  skippedNoDate: string[];
+  mismatches: ParsedBulkFile[];
+  expectedU3a: string | null;
+}
+
+interface BulkProgress {
+  current: number;
+  total: number;
+  currentFilename: string;
 }
 
 function compareSnapshots(a: Snapshot, b: Snapshot): number {
@@ -56,6 +88,9 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [view, setView] = useState<View>({ kind: 'menu' });
   const [pending, setPending] = useState<PendingLoad | null>(null);
+  const [pendingBulk, setPendingBulk] = useState<PendingBulk | null>(null);
+  const [bulkProgress, setBulkProgress] = useState<BulkProgress | null>(null);
+  const [bulkResult, setBulkResult] = useState<BulkLoadResult | null>(null);
   const [excludedPrefixes, setExcludedPrefixes] = useState<string[]>([]);
   const [prefsLoadedFor, setPrefsLoadedFor] = useState<string | null>(null);
 
@@ -64,9 +99,17 @@ export default function App() {
     [excludedPrefixes],
   );
 
-  const handleFileSelected = async (file: File) => {
+  const handleFilesSelected = async (files: File[]) => {
+    if (files.length === 0) return;
     setErrorMessage(null);
+    if (files.length === 1) {
+      await handleSingleFile(files[0]);
+      return;
+    }
+    await startBulkLoad(files);
+  };
 
+  const handleSingleFile = async (file: File) => {
     const parsed = parseBackupFilename(file.name);
     if (!parsed) {
       setPending({ file, date: '', time: '', u3aName: null });
@@ -92,6 +135,106 @@ export default function App() {
       u3aName: parsed.u3aName,
     });
     setState('u3a-prompt');
+  };
+
+  const startBulkLoad = async (files: File[]) => {
+    const { parsed, skippedNoDate } = partitionByFilename(files);
+    if (parsed.length === 0) {
+      // Nothing parseable — go straight to the summary so the user sees why.
+      setBulkResult({
+        loaded: [],
+        replaced: [],
+        skippedNoDate,
+        skippedMismatch: [],
+        failed: [],
+      });
+      setState('bulk-summary');
+      return;
+    }
+
+    const existing = canonicalU3aName(snapshots);
+    const fallback = parsed.find((p) => p.u3aName)?.u3aName ?? null;
+    const expectedU3a = existing ?? fallback;
+
+    const mismatches = expectedU3a
+      ? parsed.filter(
+          (p) => p.u3aName && !sameU3a(expectedU3a, p.u3aName),
+        )
+      : [];
+
+    if (mismatches.length > 0) {
+      setPendingBulk({ parsed, skippedNoDate, mismatches, expectedU3a });
+      setState('bulk-u3a-prompt');
+      return;
+    }
+
+    await runAndShowBulk(parsed, skippedNoDate, []);
+  };
+
+  const runAndShowBulk = async (
+    toLoad: ParsedBulkFile[],
+    skippedNoDate: string[],
+    skippedMismatch: ParsedBulkFile[],
+  ) => {
+    setBulkProgress({
+      current: 0,
+      total: toLoad.length,
+      currentFilename: toLoad[0]?.file.name ?? '',
+    });
+    setState('bulk-loading');
+
+    const outcome = await runBulkLoad(toLoad, snapshots, (current, total, name) => {
+      setBulkProgress({ current, total, currentFilename: name });
+    });
+
+    setSnapshots(outcome.snapshots);
+
+    const canonical = canonicalU3aName(outcome.snapshots);
+    const key = canonical ?? '__unknown__';
+    if (key !== prefsLoadedFor) {
+      setExcludedPrefixes(loadExcludedPrefixes(canonical));
+      setPrefsLoadedFor(key);
+    }
+
+    setBulkProgress(null);
+    setBulkResult({
+      loaded: outcome.loaded,
+      replaced: outcome.replaced,
+      skippedNoDate,
+      skippedMismatch: skippedMismatch.map((m) => ({
+        filename: m.file.name,
+        u3aName: m.u3aName,
+      })),
+      failed: outcome.failed,
+    });
+    setView({ kind: 'menu' });
+    setState('bulk-summary');
+  };
+
+  const handleBulkLoadAll = async () => {
+    if (!pendingBulk) return;
+    const { parsed, skippedNoDate } = pendingBulk;
+    setPendingBulk(null);
+    await runAndShowBulk(parsed, skippedNoDate, []);
+  };
+
+  const handleBulkSkipMismatches = async () => {
+    if (!pendingBulk) return;
+    const { parsed, skippedNoDate, mismatches } = pendingBulk;
+    setPendingBulk(null);
+    const mismatchNames = new Set(mismatches.map((m) => m.file.name));
+    const remaining = parsed.filter((p) => !mismatchNames.has(p.file.name));
+    await runAndShowBulk(remaining, skippedNoDate, mismatches);
+  };
+
+  const handleBulkCancel = () => {
+    setPendingBulk(null);
+    setState(snapshots.length > 0 ? 'loaded' : 'idle');
+  };
+
+  const handleBulkSummaryClose = () => {
+    setBulkResult(null);
+    setState(snapshots.length > 0 ? 'loaded' : 'idle');
   };
 
   const handleManualDateSubmit = async (date: string, time: string) => {
@@ -129,6 +272,9 @@ export default function App() {
   const handleClearAll = () => {
     setSnapshots([]);
     setPending(null);
+    setPendingBulk(null);
+    setBulkProgress(null);
+    setBulkResult(null);
     setView({ kind: 'menu' });
     setState('idle');
     setExcludedPrefixes([]);
@@ -211,7 +357,7 @@ export default function App() {
 
       <main className={styles.main}>
         {state === 'idle' && (
-          <FileDropzone onFileSelected={handleFileSelected} />
+          <FileDropzone onFilesSelected={handleFilesSelected} />
         )}
 
         {state === 'loading' && (
@@ -239,50 +385,79 @@ export default function App() {
           />
         )}
 
-        {state === 'loaded' && latestSnapshot && (
-          <div className={styles.loadedContent}>
-            {view.kind === 'menu' && (
-              <>
-                <SnapshotList
-                  snapshots={snapshots}
-                  onAddFile={handleFileSelected}
-                  onRemove={handleRemoveSnapshot}
-                  onClearAll={handleClearAll}
-                />
-                <SummaryPanel snapshot={latestSnapshot} />
-                <GroupExclusionSettings
-                  groups={latestSnapshot.backup.groups}
-                  prefixes={excludedPrefixes}
-                  onChange={handleExcludedPrefixesChange}
-                />
-                <AnalysisMenu
-                  onSelectCategory={(categoryId) => setView({ kind: 'category', categoryId })}
-                />
-              </>
-            )}
-
-            {view.kind === 'category' && (
-              <CategoryPage
-                categoryId={view.categoryId}
-                snapshotCount={snapshots.length}
-                onBack={() => setView({ kind: 'menu' })}
-                onSelectAnalysis={(analysisId) => setView({ kind: 'analysis', analysisId })}
-              />
-            )}
-
-            {view.kind === 'analysis' && (
-              <AnalysisPage
-                analysisId={view.analysisId}
-                snapshots={snapshots}
-                options={analysisOptions}
-                onBack={() => {
-                  const parent = getAnalysis(view.analysisId)?.categoryId;
-                  setView(parent ? { kind: 'category', categoryId: parent } : { kind: 'menu' });
-                }}
-              />
-            )}
-          </div>
+        {state === 'bulk-u3a-prompt' && pendingBulk && (
+          <BulkU3aPrompt
+            loadedU3a={pendingBulk.expectedU3a}
+            mismatches={pendingBulk.mismatches.map((m) => ({
+              filename: m.file.name,
+              u3aName: m.u3aName,
+            }))}
+            onLoadAll={handleBulkLoadAll}
+            onSkipMismatches={handleBulkSkipMismatches}
+            onCancel={handleBulkCancel}
+          />
         )}
+
+        {state === 'bulk-loading' && bulkProgress && (
+          <BulkLoadProgress
+            current={bulkProgress.current}
+            total={bulkProgress.total}
+            currentFilename={bulkProgress.currentFilename}
+          />
+        )}
+
+        {state === 'bulk-summary' && bulkResult && (
+          <BulkLoadSummary result={bulkResult} onClose={handleBulkSummaryClose} />
+        )}
+
+        {(state === 'loaded' ||
+          state === 'bulk-loading' ||
+          state === 'bulk-summary' ||
+          state === 'bulk-u3a-prompt') &&
+          latestSnapshot && (
+            <div className={styles.loadedContent}>
+              {view.kind === 'menu' && (
+                <>
+                  <SnapshotList
+                    snapshots={snapshots}
+                    onFilesSelected={handleFilesSelected}
+                    onRemove={handleRemoveSnapshot}
+                    onClearAll={handleClearAll}
+                  />
+                  <SummaryPanel snapshot={latestSnapshot} />
+                  <GroupExclusionSettings
+                    groups={latestSnapshot.backup.groups}
+                    prefixes={excludedPrefixes}
+                    onChange={handleExcludedPrefixesChange}
+                  />
+                  <AnalysisMenu
+                    onSelectCategory={(categoryId) => setView({ kind: 'category', categoryId })}
+                  />
+                </>
+              )}
+
+              {view.kind === 'category' && (
+                <CategoryPage
+                  categoryId={view.categoryId}
+                  snapshotCount={snapshots.length}
+                  onBack={() => setView({ kind: 'menu' })}
+                  onSelectAnalysis={(analysisId) => setView({ kind: 'analysis', analysisId })}
+                />
+              )}
+
+              {view.kind === 'analysis' && (
+                <AnalysisPage
+                  analysisId={view.analysisId}
+                  snapshots={snapshots}
+                  options={analysisOptions}
+                  onBack={() => {
+                    const parent = getAnalysis(view.analysisId)?.categoryId;
+                    setView(parent ? { kind: 'category', categoryId: parent } : { kind: 'menu' });
+                  }}
+                />
+              )}
+            </div>
+          )}
 
         {state === 'error' && (
           <div className={styles.error}>
